@@ -8,7 +8,8 @@ def DEFAULT_GITHUB_USER_NAME         = 'mccd-jenkins'
 def DEFAULT_GITHUB_REPOSITORY        = 'MissionCriticalCloud/organization_utils'
 def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
-def DEFAULT_GROOVY_SCRIPT = 'scripts/manage-github-web-hooks.groovy'
+def DEFAULT_WEBHOOK_GROOVY_SCRIPT         = 'scripts/manage-github-web-hooks.groovy'
+def DEFAULT_JENKINS_SERVICE_GROOVY_SCRIPT = 'scripts/manage-github-jenkins-service.groovy'
 
 def GITHUB_ORGANIZATION_NAME_PARAM = 'githubOrganizatioName'
 def GITHUB_USER_NAME_PARAM         = 'githubUserName'
@@ -38,7 +39,7 @@ freeStyleJob(GITHUB_SLACK_INTEGRATION_JOB) {
     githubPush()
   }
   steps {
-    systemGroovyScriptFile(DEFAULT_GROOVY_SCRIPT)
+    systemGroovyScriptFile(DEFAULT_WEBHOOK_GROOVY_SCRIPT)
   }
 }
 
@@ -63,6 +64,7 @@ freeStyleJob(GITHUB_JENKINS_INTEGRATION_JOB) {
     githubPush()
   }
   steps {
-    systemGroovyScriptFile(DEFAULT_GROOVY_SCRIPT)
+    systemGroovyScriptFile(DEFAULT_WEBHOOK_GROOVY_SCRIPT)
+    systemGroovyScriptFile(DEFAULT_JENKINS_SERVICE_GROOVY_SCRIPT)
   }
 }

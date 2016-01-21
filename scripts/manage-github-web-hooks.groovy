@@ -34,11 +34,15 @@ def githubEvents = Arrays.asList(repoEvents.split('( )|(\t)|(\n)')).collect {
   GHEvent.valueOf(it)
 }
 
+def hookConfig = [content_type: "json", insecure_ssl: "1"]
+
 repos.each { repo ->
   println("Checking ${repo}");
   def hooks = repo.getHooks();
   if(hooks.isEmpty() || hooks.find { h ->  h.getConfig().containsKey('url') && h.getConfig().get('url').equals(webHookUrl) } == null) {
     println("Repo ${repo} does not have the ${webHookSecretKeyword} hook");
-    repo.createWebHook(new URL(webHookUrl), githubEvents);
+    def config = hookConfig.clone()
+    config.put("url", new URL(webHookUrl).toExternalForm())
+    repo.createHook("web", config, githubEvents, true);
   }
 }

@@ -28,6 +28,6 @@ repos.each { repo ->
   def hooks = repo.getHooks();
   if(hooks.isEmpty() || hooks.find { h ->  h.getName() == SERVICE_NAME } == null) {
     println("Repo ${repo} does not have the jenkins hook");
-    repo.createHook(SERVICE_NAME, [jenkins_hook_url: new URL(jenkinsUrl).toExternalForm()], [GHEvent.PUSH], true);
+    repo.createHook(SERVICE_NAME, [jenkins_hook_url: new URL(jenkinsUrl + '/github-webhook/').toExternalForm()], [GHEvent.PUSH], true);
   }
 }

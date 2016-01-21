@@ -15,6 +15,7 @@ def GITHUB_ORGANIZATION_NAME_PARAM = 'githubOrganizatioName'
 def GITHUB_USER_NAME_PARAM         = 'githubUserName'
 def WEBHOOK_SECRET_KEYWORD_PARAM   = 'webHookSecretKeyword'
 def GITHUB_REPO_EVENTS             = 'repoEvents'
+def JENKINS_URL                    = 'jenkinsUrl'
 
 folder(FOLDER_NAME)
 
@@ -48,6 +49,7 @@ freeStyleJob(GITHUB_JENKINS_INTEGRATION_JOB) {
   parameters {
     stringParam(GITHUB_ORGANIZATION_NAME_PARAM, DEFAULT_GITHUB_ORGANIZATION_NAME, 'The GitHub organization to manage')
     stringParam(GITHUB_USER_NAME_PARAM,         DEFAULT_GITHUB_USER_NAME,         'The GitHub user that manages the organization')
+    stringParam(JENKINS_URL,                    'https://beta-jenkins.mcc.schubergphilis.com', 'The base URL of the jenkins master')
     stringParam(WEBHOOK_SECRET_KEYWORD_PARAM,   'JenkinsWebHook',                 'A keyword present in the plain text secret description, that identifies it to be a WebHook URL')
     textParam(GITHUB_REPO_EVENTS,               'ISSUE_COMMENT\nPULL_REQUEST',    'List of GtiHub events that should trigger WebHook call')
   }

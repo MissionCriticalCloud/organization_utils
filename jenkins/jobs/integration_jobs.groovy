@@ -9,8 +9,8 @@ def DEFAULT_GITHUB_USER_NAME         = 'mccd-jenkins'
 def DEFAULT_GITHUB_REPOSITORY        = 'MissionCriticalCloud/organization_utils'
 def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
-def DEFAULT_WEBHOOK_GROOVY_SCRIPT         = 'scripts/manage-github-web-hooks.groovy'
-def DEFAULT_JENKINS_SERVICE_GROOVY_SCRIPT = 'scripts/manage-github-jenkins-service.groovy'
+def DEFAULT_WEBHOOK_GROOVY_SCRIPT         = 'scripts/manage_github_web_hooks.groovy'
+def DEFAULT_JENKINS_SERVICE_GROOVY_SCRIPT = 'scripts/manage_github_jenkins_service.groovy'
 
 def GITHUB_ORGANIZATION_NAME_PARAM = 'githubOrganizatioName'
 def GITHUB_USER_NAME_PARAM         = 'githubUserName'
@@ -43,7 +43,7 @@ freeStyleJob(SEED_JOB) {
   }
   steps {
     dsl {
-      external('jenkins/jobs/*-jobs.groovy')
+      external('jenkins/jobs/*_jobs.groovy')
     }
   }
 }

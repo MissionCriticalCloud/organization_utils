@@ -66,7 +66,7 @@ freeStyleJob(GITHUB_SLACK_INTEGRATION_JOB) {
       clean(true)
       configure { node ->
         node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-          includedRegions 'scripts/.*[.]groovy'
+          includedRegions DEFAULT_WEBHOOK_GROOVY_SCRIPT
           excludedRegions ''
         }
       }
@@ -99,7 +99,7 @@ freeStyleJob(GITHUB_JENKINS_INTEGRATION_JOB) {
       clean(true)
       configure { node ->
         node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-          includedRegions 'scripts/.*[.]groovy'
+          includedRegions "${[DEFAULT_WEBHOOK_GROOVY_SCRIPT, DEFAULT_JENKINS_SERVICE_GROOVY_SCRIPT].join("\n")}"
           excludedRegions ''
         }
       }

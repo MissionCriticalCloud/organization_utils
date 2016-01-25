@@ -64,6 +64,12 @@ freeStyleJob(GITHUB_SLACK_INTEGRATION_JOB) {
       branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
       shallowClone(true)
       clean(true)
+      configure { node ->
+        node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
+          includedRegions 'scripts/.*\.groovy'
+          excludedRegions ''
+        }
+      }
     }
   }
   triggers {
@@ -91,6 +97,12 @@ freeStyleJob(GITHUB_JENKINS_INTEGRATION_JOB) {
       branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
       shallowClone(true)
       clean(true)
+      configure { node ->
+        node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
+          includedRegions 'scripts/.*\.groovy'
+          excludedRegions ''
+        }
+      }
     }
   }
   triggers {

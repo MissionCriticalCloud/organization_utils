@@ -43,7 +43,7 @@ freeStyleJob(SEED_JOB) {
   }
   steps {
     dsl {
-      external(SEED_JOB)
+      external('jenkins/jobs/.*-jobs\.groovy')
     }
   }
 }

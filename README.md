@@ -1,2 +1,2 @@
 # organization_utils
-Utilities to manage the MIssionCriticalCloud organization on GitHub
+Utilities to manage the MissionCriticalCloud organization on GitHub

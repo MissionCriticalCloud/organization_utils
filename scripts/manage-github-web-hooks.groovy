@@ -30,7 +30,7 @@ def github = GitHub.connectUsingPassword(gitubUserCredentials.username, gitubUse
 
 def organization = github.getOrganization(githubOrganizatioName);
 def repos = organization.listRepositories().toList();
-def githubEvents = Arrays.asList(repoEvents.split('( )|(\t)|(\n)')).collect {
+def githubEvents = Arrays.asList(repoEvents.split('\\s+')).collect {
   GHEvent.valueOf(it)
 }
 

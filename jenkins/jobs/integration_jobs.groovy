@@ -32,7 +32,7 @@ freeStyleJob(SEED_JOB) {
       clean(true)
       configure { node ->
         node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-          includedRegions 'jenkins/jobs/.*_jobs[.]groovy'
+          includedRegions 'jenkins/jobs/integration_jobs[.]groovy'
           excludedRegions ''
         }
       }
@@ -43,7 +43,7 @@ freeStyleJob(SEED_JOB) {
   }
   steps {
     dsl {
-      external('jenkins/jobs/*_jobs.groovy')
+      external('jenkins/jobs/integration_jobs.groovy')
     }
   }
 }

@@ -2,6 +2,7 @@ def FOLDER_NAME = 'mcc-github-organization'
 
 def GITHUB_SLACK_INTEGRATION_JOB   = "${FOLDER_NAME}/github-slack-integration"
 def GITHUB_JENKINS_INTEGRATION_JOB = "${FOLDER_NAME}/github-jenkins-integration"
+def SEED_JOB                       = "${FOLDER_NAME}/seed-job"
 
 def DEFAULT_GITHUB_ORGANIZATION_NAME = 'MissionCriticalCloud'
 def DEFAULT_GITHUB_USER_NAME         = 'mccd-jenkins'
@@ -18,6 +19,34 @@ def GITHUB_REPO_EVENTS             = 'repoEvents'
 def JENKINS_URL                    = 'jenkinsUrl'
 
 folder(FOLDER_NAME)
+
+freeStyleJob(SEED_JOB) {
+  label('executor')
+  scm {
+    git {
+      remote {
+        github(DEFAULT_GITHUB_REPOSITORY, 'https' )
+      }
+      branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
+      shallowClone(true)
+      clean(true)
+      configure { node ->
+        node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
+          includedRegions 'jenkins/jobs/.*-jobs\.groovy'
+          excludedRegions ''
+        }
+      }
+    }
+  }
+  triggers {
+    githubPush()
+  }
+  steps {
+    dsl {
+      external(SEED_JOB)
+    }
+  }
+}
 
 freeStyleJob(GITHUB_SLACK_INTEGRATION_JOB) {
   parameters {

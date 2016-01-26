@@ -98,6 +98,7 @@ mavenJob(GENERIC_MAVEN_JOB) {
     credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
       type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
       required()
+      defaultValue('95c201f6-794e-434b-a667-cf079aac4dfc')
       description('mccd jenkins OAuth2 token credential')
     }
   }

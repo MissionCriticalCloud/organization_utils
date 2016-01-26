@@ -21,6 +21,10 @@ def JENKINS_URL                    = 'jenkinsUrl'
 folder(FOLDER_NAME)
 
 freeStyleJob(SEED_JOB) {
+  logRotator {
+    numToKeep(10)
+    artifactNumToKeep(10)
+  }
   label('executor')
   scm {
     git {
@@ -91,6 +95,10 @@ freeStyleJob(GITHUB_JENKINS_INTEGRATION_JOB) {
     stringParam(JENKINS_URL,                    'https://beta-jenkins.mcc.schubergphilis.com', 'The base URL of the jenkins master')
     stringParam(WEBHOOK_SECRET_KEYWORD_PARAM,   'JenkinsWebHook',                 'A keyword present in the plain text secret description, that identifies it to be a WebHook URL')
     textParam(GITHUB_REPO_EVENTS,               'ISSUE_COMMENT\nPULL_REQUEST',    'List of GtiHub events that should trigger WebHook call')
+  }
+  logRotator {
+    numToKeep(10)
+    artifactNumToKeep(10)
   }
   wrappers {
     colorizeOutput('xterm')

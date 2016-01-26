@@ -63,7 +63,8 @@ freeStyleJob(UPDATE_COSMIC_REPO_JOB) {
   scm {
     git {
       remote {
-        github(COSMIC_GITHUB_REPOSITORY, 'https' )
+        github(COSMIC_GITHUB_REPOSITORY, 'ssh' )
+        credentials('f4ec9d6e-49fb-497c-bd1f-e42d88e105da')
       }
       branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
       shallowClone(false)

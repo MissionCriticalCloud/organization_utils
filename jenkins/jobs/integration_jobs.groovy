@@ -55,6 +55,10 @@ freeStyleJob(GITHUB_SLACK_INTEGRATION_JOB) {
     stringParam(WEBHOOK_SECRET_KEYWORD_PARAM,   'SlackWebHook',                   'A keyword present in the plain text secret description, that identifies it to be a WebHook URL')
     textParam(GITHUB_REPO_EVENTS,               'COMMIT_COMMENT\nCREATE\nDELETE\nFORK\nISSUE_COMMENT\nISSUES\nMEMBER\nPULL_REQUEST\nPULL_REQUEST_REVIEW_COMMENT\nPUSH RELEASE\nREPOSITORY\nSTATUS\nTEAM_ADD\nWATCH', 'List of GtiHub events that should trigger WebHook call')
   }
+  wrappers {
+    colorizeOutput('xterm')
+    timestamps()
+  }
   label('executor')
   scm {
     git {
@@ -87,6 +91,10 @@ freeStyleJob(GITHUB_JENKINS_INTEGRATION_JOB) {
     stringParam(JENKINS_URL,                    'https://beta-jenkins.mcc.schubergphilis.com', 'The base URL of the jenkins master')
     stringParam(WEBHOOK_SECRET_KEYWORD_PARAM,   'JenkinsWebHook',                 'A keyword present in the plain text secret description, that identifies it to be a WebHook URL')
     textParam(GITHUB_REPO_EVENTS,               'ISSUE_COMMENT\nPULL_REQUEST',    'List of GtiHub events that should trigger WebHook call')
+  }
+  wrappers {
+    colorizeOutput('xterm')
+    timestamps()
   }
   label('executor')
   scm {

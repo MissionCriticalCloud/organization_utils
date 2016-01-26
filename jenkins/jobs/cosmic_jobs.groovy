@@ -1,4 +1,4 @@
-def COSMIC_FOLDER_NAME = 'cosmic-repos'
+def COSMIC_FOLDER_NAME = 'cosmic'
 
 def UPDATE_COSMIC_REPO_JOB = "${COSMIC_FOLDER_NAME}/update-cosmic-repo"
 def SEED_JOB               = "${COSMIC_FOLDER_NAME}/seed-job"
@@ -11,6 +11,10 @@ def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 folder(COSMIC_FOLDER_NAME)
 
 freeStyleJob(SEED_JOB) {
+  logRotator {
+    numToKeep(10)
+    artifactNumToKeep(10)
+  }
   label('executor')
   scm {
     git {
@@ -33,12 +37,16 @@ freeStyleJob(SEED_JOB) {
   }
   steps {
     dsl {
-      external('jenkins/jobs/repo_jobs.groovy')
+      external('jenkins/jobs/cosmic_jobs.groovy')
     }
   }
 }
 
 freeStyleJob(UPDATE_COSMIC_REPO_JOB) {
+  logRotator {
+    numToKeep(100)
+    artifactNumToKeep(10)
+  }
   label('executor')
   wrappers {
     colorizeOutput('xterm')

@@ -74,7 +74,7 @@ freeStyleJob(UPDATE_COSMIC_REPO_JOB) {
     }
   }
   triggers {
-    scm('H/15 * * * *')
+    cron('H/15 * * * *')
   }
   steps {
     shell([

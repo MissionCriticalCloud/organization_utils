@@ -54,14 +54,16 @@ FOLDERS.each { folderName ->
         clean(true)
         configure { node ->
           node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-            includedRegions 'jenkins/jobs/repo_jobs[.]groovy'
+            includedRegions 'jenkins/jobs/cosmic_jobs[.]groovy'
             excludedRegions ''
           }
         }
       }
     }
     triggers {
-      githubPush()
+      if(!isDevFolder) {
+        githubPush()
+      }
     }
     steps {
       dsl {

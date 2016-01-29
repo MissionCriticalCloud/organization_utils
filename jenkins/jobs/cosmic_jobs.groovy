@@ -27,7 +27,7 @@ def DEFAULT_EXECUTOR     = 'executor'
 def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 FOLDERS.each { folderName ->
-  def seedJob             = "${folderName}/901-seed-job"
+  def seedJob             = "${folderName}/seed-job"
   def updateCosmicRepoJob = "${folderName}/902-update-cosmic-repo"
   def genericMavenJob     = "${folderName}/903-generic-maven-job"
   def fullBuildJobName    = "${folderName}/001-full-build"

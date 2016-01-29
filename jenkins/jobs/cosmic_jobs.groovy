@@ -23,7 +23,8 @@ def FOLDERS = [
   'cosmic-dev'
 ]
 
-def DEFAULT_EXECUTOR = 'executor-mct'
+def DEFAULT_EXECUTOR     = 'executor'
+def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 FOLDERS.each { folderName ->
   def seedJob             = "${folderName}/901-seed-job"
@@ -33,7 +34,7 @@ FOLDERS.each { folderName ->
 
 
   def isDevFolder = folderName.endsWith('-dev')
-  def executorLabel = DEFAULT_EXECUTOR + (isDevFolder ? '-dev' : '')
+  def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
 
   folder(folderName)
 
@@ -42,7 +43,7 @@ FOLDERS.each { folderName ->
       numToKeep(10)
       artifactNumToKeep(10)
     }
-    label(executorLabel)
+    label(DEFAULT_EXECUTOR)
     scm {
       git {
         remote {
@@ -74,7 +75,7 @@ FOLDERS.each { folderName ->
       numToKeep(100)
       artifactNumToKeep(10)
     }
-    label(executorLabel)
+    label(DEFAULT_EXECUTOR)
     wrappers {
       colorizeOutput('xterm')
       timestamps()
@@ -134,7 +135,7 @@ FOLDERS.each { folderName ->
       artifactNumToKeep(50)
     }
     concurrentBuild()
-    label(executorLabel)
+    label(executorLabelMct)
     wrappers {
       colorizeOutput('xterm')
       timestamps()
@@ -170,7 +171,7 @@ FOLDERS.each { folderName ->
       stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
     }
     concurrentBuild()
-    label(executorLabel)
+    label(executorLabelMct)
     throttleConcurrentBuilds {
       maxPerNode(1)
     }

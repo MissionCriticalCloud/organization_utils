@@ -34,7 +34,7 @@ def githubEvents = Arrays.asList(repoEvents.split('\\s+')).collect {
   GHEvent.valueOf(it)
 }
 
-def hookConfig = [content_type: "json", insecure_ssl: "1"]
+def hookConfig = [content_type: "json", insecure_ssl: "0"]
 
 repos.each { repo ->
   println("Checking ${repo}");

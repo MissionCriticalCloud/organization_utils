@@ -155,7 +155,7 @@ FOLDERS.each { folderName ->
           name('origin')
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
-        branch('${' + DEFAULT_GIT_REPO_BRANCH_PARAM + '}')
+        branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(true)
@@ -335,9 +335,9 @@ FOLDERS.each { folderName ->
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
     environmentVariables {
-      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, '${' + GITHUB_OAUTH2_CREDENTIAL_PARAM + '}')
+      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
     }
-    customWorkspace('${' + CUSTOM_WORKSPACE_PARAM + '}')
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     logRotator {
       numToKeep(50)
       artifactNumToKeep(50)
@@ -353,7 +353,7 @@ FOLDERS.each { folderName ->
   }
 
   getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME).each { cosmicRepo ->
-    def targetBranch = '${' + DEFAULT_GIT_REPO_BRANCH_PARAM + '}'
+    def targetBranch = injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM)
     def repoName = cosmicRepo.getName()
     def githubRepository = "${ORGANIZATION_NAME}/" + repoName
     def repoJobName =  "${folderName}/plugin-pull-request-build-${repoName}"
@@ -362,7 +362,7 @@ FOLDERS.each { folderName ->
     multiJob(repoJobName) {
       displayName('Plugin pull request build: ' + repoName)
       parameters {
-        stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'sha1', 'Branch to be built')
+        stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, DEFAULT_GIT_REPO_BRANCH, 'Branch to be built')
       }
       concurrentBuild()
       label(DEFAULT_EXECUTOR)
@@ -382,7 +382,7 @@ FOLDERS.each { folderName ->
             name('origin')
             refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
           }
-          branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
+          branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
           clean(true)
           recursiveSubmodules(true)
           trackingSubmodules(true)
@@ -451,4 +451,20 @@ def getPluginRepositories(githubOrganizatioName, githubUserName) {
   def repos = organization.listRepositories().toList();
 
   return repos.findAll { it.getName().startsWith('cosmic-') }
+}
+
+def injectJobVariable(variableName) {
+  return '${' + variableName + '}'
+}
+
+// used for testing in order to avoind calling github api all the time
+class FakeRepo {
+
+  private String name;
+
+  public FakeRepo(String name) {
+    this.name = name;
+  }
+
+  public String getName() { return name }
 }

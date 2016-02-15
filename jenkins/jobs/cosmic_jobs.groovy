@@ -19,6 +19,7 @@ def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
 def GITHUB_REPOSITORY_NAME_PARAM  = 'githubRepository'
 def GITHUB_OAUTH2_CREDENTIAL_PARAM = 'mccdJenkinsOauth2'
+def ARTEFACTS_TO_ARCHIVE_PARAM = 'artefactsToArchive'
 
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 
@@ -27,15 +28,32 @@ def DEFAULT_GITHUB_JOB_LABEL = 'mccd jenkins build'
 def MCCD_JENKINS_GITHUB_CREDENTIALS       = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4dfc'
 
+def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-kvm1-kvm2.cfg'
+
 def MAVEN_REPORTS = [
   '**/target/surefire-reports/*.xml',
   '**/target/failsafe-reports/*.xml'
 ]
 
-def MAVEN_JOB_ARTIFACTS = [
+def GENERIC_MAVEN_JOB_ARTIFACTS = [
   '**/target/*.war',
   '**/target/*.jar'
 ] + MAVEN_REPORTS
+
+// TODO: update these paths
+def COSMIC_MAVEN_BUILD_ARTEFACTS = [
+  'client/target/cloud-client-ui-*.war',
+  'client/target/utilities/',
+  'client/target/conf/',
+  'cloudstack-*.rpm',
+  'tools/marvin/dist/Marvin-*.tar.gz',
+  'setup/db/db/',
+  'setup/db/create-*.sql',
+  'setup/db/templates*.sql',
+  'developer/developer-prefill.sql',
+  'scripts/storage/secondary/',
+  'test/integration/'
+]
 
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
@@ -48,22 +66,24 @@ def DEFAULT_EXECUTOR     = 'executor'
 def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 FOLDERS.each { folderName ->
-  def seedJob                      = "${folderName}/seed-job"
-  def updateCosmicRepoJob          = "${folderName}/update-cosmic-repo"
-  def customWorkspaceMavenJob      = "${folderName}/custom-workspace-maven-job"
-  def trackingRepoPullRequestBuild = "${folderName}/tracking-repo-pull-request-build"
-  def trackingRepoMasterBuild      = "${folderName}/tracking-repo-master-build"
+  def seedJob                         = "${folderName}/seed-job"
+  def updateCosmicRepoJob             = "${folderName}/update-cosmic-repo"
+  def customWorkspaceMavenJob         = "${folderName}/custom-workspace-maven-job"
+  def trackingRepoPullRequestBuild    = "${folderName}/tracking-repo-pull-request-build"
+  def trackingRepoMasterBuild         = "${folderName}/tracking-repo-master-build"
+  def prepareInfraForIntegrationTests = "${folderName}/prepare-infrastructure-for-integration-tests"
 
 
   def isDevFolder = folderName.endsWith('-dev')
   def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
+  def shellPrefix = isDevFolder ? 'bash -x' : ''
 
   folder(folderName)
 
   // seed job is meant to trigger when this file changes in git
   freeStyleJob(seedJob) {
     logRotator {
-      numToKeep(10)
+      numToKeep(50)
       artifactNumToKeep(10)
     }
     label(DEFAULT_EXECUTOR)
@@ -135,8 +155,8 @@ FOLDERS.each { folderName ->
       maxPerNode(1)
     }
     logRotator {
-      numToKeep(5)
-      artifactNumToKeep(5)
+      numToKeep(50)
+      artifactNumToKeep(10)
     }
     wrappers {
       colorizeOutput('xterm')
@@ -162,30 +182,40 @@ FOLDERS.each { folderName ->
       }
     }
     steps {
-      phase('Update tracking repository') {
-        continuationCondition('SUCCESSFUL')
-        phaseJob(updateCosmicRepoJob) {
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            sameNode()
-            gitRevision(false)
-            killPhaseCondition('FAILURE')
+      if (!isDevFolder) {
+        phase('Update tracking repository') {
+          continuationCondition('SUCCESSFUL')
+          phaseJob(updateCosmicRepoJob) {
+            parameters {
+              predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+              sameNode()
+              gitRevision(false)
+              killPhaseCondition('FAILURE')
+            }
           }
         }
       }
-      phase('Build Code') {
+      phase('Build code and prepare infrastructure for integrations tests') {
         phaseJob(customWorkspaceMavenJob) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(GITHUB_REPOSITORY_NAME_PARAM, COSMIC_GITHUB_REPOSITORY)
+            predefinedProp(ARTEFACTS_TO_ARCHIVE_PARAM, makePatternList(COSMIC_MAVEN_BUILD_ARTEFACTS))
+            sameNode()
+            gitRevision(false)
+          }
+        }
+        phaseJob(prepareInfraForIntegrationTests) {
+          currentJobParameters(false)
+          parameters {
             sameNode()
             gitRevision(false)
           }
         }
       }
       copyArtifacts(customWorkspaceMavenJob) {
-        includePatterns(MAVEN_REPORTS.join(', '))
+        includePatterns(makePatternList(MAVEN_REPORTS))
         fingerprintArtifacts(true)
         buildSelector {
           multiJobBuild()
@@ -193,7 +223,7 @@ FOLDERS.each { folderName ->
       }
     }
     publishers {
-      archiveJunit(MAVEN_REPORTS.join(', ')) {
+      archiveJunit(makePatternList(COSMIC_MAVEN_BUILD_ARTEFACTS)) {
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
@@ -211,8 +241,8 @@ FOLDERS.each { folderName ->
     concurrentBuild()
     label(DEFAULT_EXECUTOR)
     logRotator {
-      numToKeep(5)
-      artifactNumToKeep(5)
+      numToKeep(50)
+      artifactNumToKeep(10)
     }
     wrappers {
       colorizeOutput('xterm')
@@ -226,7 +256,7 @@ FOLDERS.each { folderName ->
           name('origin')
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
-        branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
+        branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(true)
@@ -256,21 +286,15 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(GITHUB_REPOSITORY_NAME_PARAM, COSMIC_GITHUB_REPOSITORY)
+            predefinedProp(ARTEFACTS_TO_ARCHIVE_PARAM, makePatternList(MAVEN_REPORTS))
             sameNode()
             gitRevision(false)
           }
         }
       }
-      copyArtifacts(customWorkspaceMavenJob) {
-        includePatterns(MAVEN_REPORTS.join(', '))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
-        }
-      }
     }
     publishers {
-      archiveJunit(MAVEN_REPORTS.join(', ')) {
+      archiveJunit(makePatternList(MAVEN_REPORTS)) {
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
@@ -332,6 +356,7 @@ FOLDERS.each { folderName ->
         defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
         description('mccd jenkins OAuth2 token credential')
       }
+      textParam(ARTEFACTS_TO_ARCHIVE_PARAM, '', 'The artefacts that should be archived when the build is successful')
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
     environmentVariables {
@@ -340,7 +365,7 @@ FOLDERS.each { folderName ->
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     logRotator {
       numToKeep(50)
-      artifactNumToKeep(50)
+      artifactNumToKeep(10)
     }
     concurrentBuild()
     wrappers {
@@ -349,7 +374,36 @@ FOLDERS.each { folderName ->
     }
     goals('clean')
     goals('install')
-    goals('-P developer')
+    goals('-Pdeveloper')
+    goals('-T4')
+    publishers {
+      archiveArtifacts {
+        pattern(injectJobVariable(ARTEFACTS_TO_ARCHIVE_PARAM))
+        onlyIfSuccessful()
+        fingerprint(true)
+      }
+    }
+  }
+
+  // Job that prepares the infrastructure for the cosmic integration tests
+  freeStyleJob(prepareInfraForIntegrationTests) {
+    concurrentBuild()
+    label(executorLabelMct)
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      shell('rm -rf ./*')
+      shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+    }
   }
 
   getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME).each { cosmicRepo ->
@@ -367,8 +421,8 @@ FOLDERS.each { folderName ->
       concurrentBuild()
       label(DEFAULT_EXECUTOR)
       logRotator {
-        numToKeep(5)
-        artifactNumToKeep(5)
+        numToKeep(50)
+        artifactNumToKeep(10)
       }
       wrappers {
         colorizeOutput('xterm')
@@ -418,7 +472,7 @@ FOLDERS.each { folderName ->
           }
         }
         copyArtifacts(customWorkspaceMavenJob) {
-          includePatterns(MAVEN_REPORTS.join(', '))
+          includePatterns(makePatternList(MAVEN_REPORTS))
           fingerprintArtifacts(true)
           optional(true)
           buildSelector {
@@ -427,7 +481,7 @@ FOLDERS.each { folderName ->
         }
       }
       publishers {
-        archiveJunit(MAVEN_REPORTS.join(', ')) {
+        archiveJunit(makePatternList(MAVEN_REPORTS)) {
           retainLongStdout(true)
           testDataPublishers {
               publishTestStabilityData()
@@ -455,6 +509,10 @@ def getPluginRepositories(githubOrganizatioName, githubUserName) {
 
 def injectJobVariable(variableName) {
   return '${' + variableName + '}'
+}
+
+def makePatternList(patterns) {
+  return patterns.join(', ')
 }
 
 // used for testing in order to avoind calling github api all the time

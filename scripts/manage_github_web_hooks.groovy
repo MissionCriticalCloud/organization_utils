@@ -1,5 +1,5 @@
 import com.cloudbees.plugins.credentials.CredentialsProvider
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials
+import com.cloudbees.plugins.credentials.common.StandardCredentials
 import org.jenkinsci.plugins.plaincredentials.StringCredentials
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.GHEvent
@@ -13,20 +13,17 @@ def githubUserName = parameters.find({ it.name == 'githubUserName' }).value
 def webHookSecretKeyword = parameters.find({ it.name == 'webHookSecretKeyword' }).value
 def repoEvents = parameters.find({ it.name == 'repoEvents' }).value
 
-def webHookSecrets = CredentialsProvider.lookupCredentials(
-  StringCredentials.class,
+def credentials = CredentialsProvider.lookupCredentials(
+  StandardCredentials.class,
   Jenkins.instance
 )
-def webHookSecret = webHookSecrets.find({ it.description.contains webHookSecretKeyword })
-def webHookUrl = webHookSecret.getSecret().getPlainText()
 
-def githubCredentials = CredentialsProvider.lookupCredentials(
-  StandardUsernameCredentials.class,
-  Jenkins.instance
-)
-gitubUserCredentials = githubCredentials.find({ it.username == githubUserName })
+def webHookSecret = credentials.find({ it.description.contains(webHookSecretKeyword) })
+def webHookUrl = webHookSecret.secret.getPlainText()
 
-def github = GitHub.connectUsingPassword(gitubUserCredentials.username, gitubUserCredentials.password.getPlainText())
+def gitubUserCredentials = credentials.find({ it.description.contains(githubUserName) && it.description.contains('OAuth2') })
+
+def github = GitHub.connect(githubUserName, gitubUserCredentials.secret.getPlainText())
 
 def organization = github.getOrganization(githubOrganizatioName);
 def repos = organization.listRepositories().toList();

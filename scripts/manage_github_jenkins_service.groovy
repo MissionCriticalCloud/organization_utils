@@ -1,5 +1,5 @@
 import com.cloudbees.plugins.credentials.CredentialsProvider
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials
+import com.cloudbees.plugins.credentials.common.StandardCredentials
 import org.kohsuke.github.GitHub
 import org.kohsuke.github.GHEvent
 import jenkins.model.Jenkins
@@ -13,12 +13,12 @@ def jenkinsUrl = parameters.find({ it.name == 'jenkinsUrl' }).value
 def SERVICE_NAME = 'jenkins'
 
 def githubCredentials = CredentialsProvider.lookupCredentials(
-  StandardUsernameCredentials.class,
+  StandardCredentials.class,
   Jenkins.instance
 )
-gitubUserCredentials = githubCredentials.find({ it.username == githubUserName })
+gitubUserCredentials = githubCredentials.find({ it.description.contains(githubUserName) && it.description.contains('OAuth2') })
 
-def github = GitHub.connectUsingPassword(gitubUserCredentials.username, gitubUserCredentials.password.getPlainText())
+def github = GitHub.connect(githubUserName, gitubUserCredentials.secret.getPlainText())
 
 def organization = github.getOrganization(githubOrganizatioName);
 def repos = organization.listRepositories().toList();

@@ -1,5 +1,5 @@
 import com.cloudbees.plugins.credentials.CredentialsProvider
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials
+import com.cloudbees.plugins.credentials.common.StandardCredentials
 import jenkins.model.Jenkins
 import org.kohsuke.github.GitHub
 
@@ -494,12 +494,12 @@ FOLDERS.each { folderName ->
 
 def getPluginRepositories(githubOrganizatioName, githubUserName) {
   def githubCredentials = CredentialsProvider.lookupCredentials(
-    StandardUsernameCredentials.class,
+    StandardCredentials.class,
     Jenkins.instance
   )
-  gitubUserCredentials = githubCredentials.find({ it.username == githubUserName })
+  gitubUserCredentials = githubCredentials.find({ it.description.contains(githubUserName) && it.description.contains('OAuth2') })
 
-  def github = GitHub.connectUsingPassword(gitubUserCredentials.username, gitubUserCredentials.password.getPlainText())
+  def github = GitHub.connect(githubUserName, gitubUserCredentials.secret.getPlainText())
 
   def organization = github.getOrganization(githubOrganizatioName);
   def repos = organization.listRepositories().toList();

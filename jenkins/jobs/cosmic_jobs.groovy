@@ -52,7 +52,11 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-client/target/utilities/',
   'cosmic-core/developer/developer-prefill.sql',
   'cosmic-core/test/integration/',
-  'cosmic-core/tools/marvin/dist/Marvin-*.tar.gz'
+  'cosmic-core/**/target/*.jar',
+  'cosmic-core/tools/marvin/dist/Marvin-*.tar.gz',
+  'cosmic-plugin-hypervisor-kvm/target/*.jar',
+  'cosmic-plugin-hypervisor-ovm3/target/*.jar',
+  'cosmic-plugin-hypervisor-xenserver/target/*.jar'
 ] + COSMIC_PACKAGING_ARTEFACTS
 
 // dev folder is to play arround with jobs.

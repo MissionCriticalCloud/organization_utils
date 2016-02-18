@@ -130,15 +130,12 @@ FOLDERS.each { folderName ->
         '}',
         'task wrapper(type: Wrapper) {',
         '  gradleVersion = \'2.2.1\'',
-        '}" > build.gradle'
+        '}" > build.gradle',
+        '/usr/local/gradle/bin/gradle libs'
       ].join('\n'))
-      // bundle dependencies
-      gradle {
-        gradleName('default gradle')
-        tasks('libs')
-      }
       dsl {
         external('jenkins/jobs/cosmic_jobs.groovy')
+        additionalClasspath('lib/*')
       }
     }
   }

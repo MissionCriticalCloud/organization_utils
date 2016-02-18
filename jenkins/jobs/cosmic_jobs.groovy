@@ -421,8 +421,6 @@ FOLDERS.each { folderName ->
           }
           branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
           clean(true)
-          recursiveSubmodules(true)
-          trackingSubmodules(true)
         }
       }
       triggers {

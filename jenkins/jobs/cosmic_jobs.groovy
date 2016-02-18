@@ -197,8 +197,6 @@ FOLDERS.each { folderName ->
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            predefinedProp(GITHUB_REPOSITORY_NAME_PARAM, COSMIC_GITHUB_REPOSITORY)
-            predefinedProp(ARTEFACTS_TO_ARCHIVE_PARAM, makePatternList(COSMIC_MAVEN_BUILD_ARTEFACTS))
             sameNode()
             gitRevision(false)
           }
@@ -211,16 +209,13 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      copyArtifacts(customWorkspaceMavenJob) {
-        includePatterns(makePatternList(MAVEN_REPORTS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
-        }
-      }
     }
     publishers {
-      archiveJunit(makePatternList(COSMIC_MAVEN_BUILD_ARTEFACTS)) {
+      archiveArtifacts {
+        pattern(makePatternList(COSMIC_MAVEN_BUILD_ARTEFACTS))
+        onlyIfSuccessful()
+      }
+      archiveJunit(makePatternList(MAVEN_REPORTS)) {
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
@@ -282,8 +277,6 @@ FOLDERS.each { folderName ->
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            predefinedProp(GITHUB_REPOSITORY_NAME_PARAM, COSMIC_GITHUB_REPOSITORY)
-            predefinedProp(ARTEFACTS_TO_ARCHIVE_PARAM, makePatternList(MAVEN_REPORTS))
             sameNode()
             gitRevision(false)
           }
@@ -346,7 +339,6 @@ FOLDERS.each { folderName ->
   // this job is meant to be called by another job that already checked out a maven project
   mavenJob(customWorkspaceMavenJob) {
     parameters {
-      stringParam(GITHUB_REPOSITORY_NAME_PARAM, '', 'The GitHub repository to build')
       credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
         type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
         required()
@@ -373,13 +365,6 @@ FOLDERS.each { folderName ->
     goals('install')
     goals('-Pdeveloper')
     goals('-T4')
-    publishers {
-      archiveArtifacts {
-        pattern(injectJobVariable(ARTEFACTS_TO_ARCHIVE_PARAM))
-        onlyIfSuccessful()
-        fingerprint(true)
-      }
-    }
   }
 
   // Job that prepares the infrastructure for the cosmic integration tests
@@ -403,6 +388,7 @@ FOLDERS.each { folderName ->
     }
   }
 
+  // Pull request jobs for plugins
   getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME).each { cosmicRepo ->
     def targetBranch = injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM)
     def repoName = cosmicRepo.getName()
@@ -462,26 +448,19 @@ FOLDERS.each { folderName ->
             currentJobParameters(true)
             parameters {
               predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-              predefinedProp(GITHUB_REPOSITORY_NAME_PARAM, githubRepository)
               sameNode()
               gitRevision(false)
             }
           }
         }
-        copyArtifacts(customWorkspaceMavenJob) {
-          includePatterns(makePatternList(MAVEN_REPORTS))
-          fingerprintArtifacts(true)
-          optional(true)
-          buildSelector {
-            multiJobBuild()
-          }
-        }
       }
-      publishers {
-        archiveJunit(makePatternList(MAVEN_REPORTS)) {
-          retainLongStdout(true)
-          testDataPublishers {
-              publishTestStabilityData()
+      if(repoName != 'cosmic-client') {
+        publishers {
+          archiveJunit(makePatternList(MAVEN_REPORTS)) {
+            retainLongStdout(true)
+            testDataPublishers {
+                publishTestStabilityData()
+            }
           }
         }
       }

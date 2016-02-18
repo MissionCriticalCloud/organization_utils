@@ -489,8 +489,9 @@ FOLDERS.each { folderName ->
     }
   }
 
+  def pluginRepositories = isDevFolder ? getFakeRepos() : getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME);
   // Pull request jobs for plugins
-  getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME).each { cosmicRepo ->
+  pluginRepositories.each { cosmicRepo ->
     def targetBranch = injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM)
     def repoName = cosmicRepo.getName()
     def githubRepository = "${ORGANIZATION_NAME}/" + repoName
@@ -593,6 +594,8 @@ def makePatternList(patterns) {
 def makeMultiline(lines) {
   return lines.join('\n')
 }
+
+def getFakeRepos() { return [ new FakeRepo('cosmic-client'), new FakeRepo('cosmic-core') ] }
 
 // used for testing in order to avoind calling github api all the time
 class FakeRepo {

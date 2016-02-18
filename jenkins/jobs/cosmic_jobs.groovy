@@ -87,24 +87,24 @@ FOLDERS.each { folderName ->
       artifactNumToKeep(10)
     }
     label(DEFAULT_EXECUTOR)
-    scm {
-      git {
-        remote {
-          github(ORG_UTILS_GITHUB_REPOSITORY, 'https' )
-        }
-        branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
-        shallowClone(true)
-        clean(true)
-        configure { node ->
-          node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-            includedRegions 'jenkins/jobs/cosmic_jobs[.]groovy'
-            excludedRegions ''
+    if(!isDevFolder) {
+      scm {
+        git {
+          remote {
+            github(ORG_UTILS_GITHUB_REPOSITORY, 'https' )
+          }
+          branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
+          shallowClone(true)
+          clean(true)
+          configure { node ->
+            node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
+              includedRegions 'jenkins/jobs/cosmic_jobs[.]groovy'
+              excludedRegions ''
+            }
           }
         }
       }
-    }
-    triggers {
-      if(!isDevFolder) {
+      triggers {
         githubPush()
       }
     }
@@ -134,7 +134,9 @@ FOLDERS.each { folderName ->
         '/usr/local/gradle/bin/gradle libs'
       ].join('\n'))
       dsl {
-        external('jenkins/jobs/cosmic_jobs.groovy')
+        if(!isDevFolder) {
+          external('jenkins/jobs/cosmic_jobs.groovy')
+        }
         additionalClasspath('lib/*')
       }
     }

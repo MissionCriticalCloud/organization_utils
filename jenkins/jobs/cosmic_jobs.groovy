@@ -197,7 +197,7 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Build maven project and prepare infrastructure for integrations tests') {
-        phaseJob(customWorkspaceMavenJob) {
+        phaseJob(trackingRepoBuildAndPackageJob) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
@@ -306,7 +306,6 @@ FOLDERS.each { folderName ->
         defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
         description('mccd jenkins OAuth2 token credential')
       }
-      textParam(ARTEFACTS_TO_ARCHIVE_PARAM, '', 'The artefacts that should be archived when the build is successful')
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))

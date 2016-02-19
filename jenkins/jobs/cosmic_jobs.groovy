@@ -78,6 +78,7 @@ FOLDERS.each { folderName ->
   def trackingRepoBuildAndPackageJob  = "${folderName}/tracking-repo-build-and-package"
   def trackingRepoPackageJob          = "${folderName}/tracking-repo-package"
   def prepareInfraForIntegrationTests = "${folderName}/prepare-infrastructure-for-integration-tests"
+  def setupInfraForIntegrationTests   = "${folderName}/setup-infrastructure-for-integration-tests"
 
 
   def isDevFolder = folderName.endsWith('-dev')
@@ -212,6 +213,16 @@ FOLDERS.each { folderName ->
         phaseJob(prepareInfraForIntegrationTests) {
           currentJobParameters(false)
           parameters {
+            sameNode()
+            gitRevision(false)
+          }
+        }
+      }
+      phase('Setup infrastructure for integration tets') {
+        phaseJob(setupInfraForIntegrationTests) {
+          currentJobParameters(false)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(false)
           }
@@ -489,6 +500,31 @@ FOLDERS.each { folderName ->
     steps {
       shell('rm -rf ./*')
       shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+    }
+  }
+
+  // Job that prepares the infrastructure for the cosmic integration tests
+  freeStyleJob(setupInfraForIntegrationTests) {
+    parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    concurrentBuild()
+    label(executorLabelMct)
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      shell('rm -rf ./*')
+      shell("${shellPrefix} /data/shared/ci/ci-setup-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
     }
   }
 

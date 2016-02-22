@@ -19,9 +19,11 @@ def COSMIC_GITHUB_REPOSITORY         = "${ORGANIZATION_NAME}/cosmic"
 def PACKAGING_GITHUB_REPOSITORY      = "${ORGANIZATION_NAME}/packaging"
 def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
-def GITHUB_REPOSITORY_NAME_PARAM  = 'githubRepository'
-def GITHUB_OAUTH2_CREDENTIAL_PARAM = 'mccdJenkinsOauth2'
-def ARTEFACTS_TO_ARCHIVE_PARAM = 'artefactsToArchive'
+def GITHUB_REPOSITORY_NAME_PARAM     = 'githubRepository'
+def GITHUB_OAUTH2_CREDENTIAL_PARAM   = 'mccdJenkinsOauth2'
+def ARTEFACTS_TO_ARCHIVE_PARAM       = 'artefactsToArchive'
+def REQUIRED_HARDWARE_PARAM          = 'requiredHardware'
+def TESTS_PARAM                      = 'tests'
 
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 
@@ -37,8 +39,17 @@ def MAVEN_REPORTS = [
   '**/target/failsafe-reports/*.xml'
 ]
 
+def MARVIN_REPORTS = [
+  'nosetests-required_hardware*'
+]
+
 def COSMIC_PACKAGING_ARTEFACTS = [
   'dist/rpmbuild/RPMS/x86_64/cosmic-*.rpm'
+]
+
+def COSMIC_TEST_ARTEFACTS = [
+  'nosetests-required_hardware*',
+  'MarvinLogs/'
 ]
 
 def COSMIC_BUILD_ARTEFACTS = [
@@ -57,7 +68,33 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-plugin-hypervisor-kvm/target/*.jar',
   'cosmic-plugin-hypervisor-ovm3/target/*.jar',
   'cosmic-plugin-hypervisor-xenserver/target/*.jar'
-] + COSMIC_PACKAGING_ARTEFACTS
+] + COSMIC_PACKAGING_ARTEFACTS + COSMIC_TEST_ARTEFACTS
+
+def COSMIC_TESTS_WITH_HARDWARE = [
+  'smoke/test_password_server.py',
+  'smoke/test_vpc_redundant.py',
+  'smoke/test_routers_iptables_default_policy.py',
+  'smoke/test_routers_network_ops.py',
+  'smoke/test_vpc_router_nics.py',
+  'smoke/test_router_dhcphosts.py',
+  'smoke/test_loadbalance.py',
+  'smoke/test_internal_lb.py',
+  'smoke/test_ssvm.py',
+  'smoke/test_vpc_vpn.py',
+  'smoke/test_privategw_acl.py',
+  'smoke/test_network.py'
+]
+
+def COSMIC_TESTS_WITHOUT_HARDWARE = [
+  'smoke/test_routers.py',
+  'smoke/test_network_acl.py',
+  'smoke/test_reset_vm_on_reboot.py',
+  'smoke/test_vm_life_cycle.py',
+  'smoke/test_service_offerings.py',
+  'smoke/test_network.py',
+  'component/test_vpc_offerings.py',
+  'component/test_vpc_routers.py'
+]
 
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
@@ -79,9 +116,9 @@ FOLDERS.each { folderName ->
   def packageCosmicJob                    = "${folderName}/tracking-repo-package"
   def prepareInfraForIntegrationTests     = "${folderName}/prepare-infrastructure-for-integration-tests"
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
-  def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-infrastructure-for-integration-tests"
+  def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
+  def runAllIntegrationTests              = "${folderName}/run-all-integration-tests"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
-
 
   def isDevFolder = folderName.endsWith('-dev')
   def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
@@ -239,6 +276,16 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      phase('Run integration tests') {
+        phaseJob(runAllIntegrationTests) {
+          currentJobParameters(false)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            sameNode()
+            gitRevision(false)
+          }
+        }
+      }
     }
     publishers {
       archiveArtifacts {
@@ -249,6 +296,11 @@ FOLDERS.each { folderName ->
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
+        }
+      }
+      archiveXUnit {
+        jUnit {
+          pattern(makePatternList(MARVIN_REPORTS))
         }
       }
     }
@@ -376,6 +428,46 @@ FOLDERS.each { folderName ->
       archiveArtifacts {
         pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
         onlyIfSuccessful()
+      }
+    }
+  }
+
+  multiJob(runAllIntegrationTests) {
+    parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    label(executorLabelMct)
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      shell("rm -rf /tmp/MarvinLogs/test_*")
+      phase('Run integration tests ') {
+        phaseJob(runIntegrationTests) {
+          currentJobParameters(true)
+          parameters {
+            sameNode()
+            gitRevision(false)
+            booleanParam(REQUIRED_HARDWARE_PARAM, false)
+            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITHOUT_HARDWARE))
+          }
+        }
+        phaseJob(runIntegrationTests) {
+          currentJobParameters(true)
+          parameters {
+            sameNode()
+            gitRevision(false)
+            booleanParam(REQUIRED_HARDWARE_PARAM, true)
+            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITH_HARDWARE))
+          }
+        }
       }
     }
   }
@@ -559,11 +651,14 @@ FOLDERS.each { folderName ->
   freeStyleJob(runIntegrationTests) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+      booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
+      stringParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
     }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     concurrentBuild()
     label(executorLabelMct)
     throttleConcurrentBuilds {
-      maxPerNode(1)
+      maxPerNode(2) // there will be two test runs in parallel (with/without hardware)
     }
     logRotator {
       numToKeep(50)
@@ -574,7 +669,9 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
-      shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+      shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(TESTS_PARAM)}")
+      shell("mkdir -p MarvinLogs")
+      shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
     }
   }
 
@@ -678,6 +775,10 @@ def injectJobVariable(variableName) {
 
 def makePatternList(patterns) {
   return patterns.join(', ')
+}
+
+def makeSpaceSeperatedList(patterns) {
+  return patterns.join(' ')
 }
 
 def makeMultiline(lines) {

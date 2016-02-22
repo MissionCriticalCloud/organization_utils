@@ -19,9 +19,11 @@ def COSMIC_GITHUB_REPOSITORY         = "${ORGANIZATION_NAME}/cosmic"
 def PACKAGING_GITHUB_REPOSITORY      = "${ORGANIZATION_NAME}/packaging"
 def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
-def GITHUB_REPOSITORY_NAME_PARAM  = 'githubRepository'
-def GITHUB_OAUTH2_CREDENTIAL_PARAM = 'mccdJenkinsOauth2'
-def ARTEFACTS_TO_ARCHIVE_PARAM = 'artefactsToArchive'
+def GITHUB_REPOSITORY_NAME_PARAM     = 'githubRepository'
+def GITHUB_OAUTH2_CREDENTIAL_PARAM   = 'mccdJenkinsOauth2'
+def ARTEFACTS_TO_ARCHIVE_PARAM       = 'artefactsToArchive'
+def REQUIRED_HARDWARE_PARAM          = 'requiredHardware'
+def TESTS_PARAM                      = 'tests'
 
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 
@@ -79,7 +81,7 @@ FOLDERS.each { folderName ->
   def packageCosmicJob                    = "${folderName}/tracking-repo-package"
   def prepareInfraForIntegrationTests     = "${folderName}/prepare-infrastructure-for-integration-tests"
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
-  def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-infrastructure-for-integration-tests"
+  def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
 
 
@@ -558,7 +560,9 @@ FOLDERS.each { folderName ->
 
   freeStyleJob(runIntegrationTests) {
     parameters {
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+      booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
+      textParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
+      stringParam(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR, 'A directory with the cosmic sources and artefacts to use for the job')
     }
     concurrentBuild()
     label(executorLabelMct)
@@ -574,7 +578,7 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
-      shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+      shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(TESTS_PARAM)}")
     }
   }
 

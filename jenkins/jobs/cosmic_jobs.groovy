@@ -38,7 +38,7 @@ def MAVEN_REPORTS = [
 ]
 
 def COSMIC_PACKAGING_ARTEFACTS = [
-  'dist/rpmbuild/RPM/x86_64/cosmic-*.rpm'
+  'dist/rpmbuild/RPMS/x86_64/cosmic-*.rpm'
 ]
 
 def COSMIC_BUILD_ARTEFACTS = [
@@ -62,7 +62,7 @@ def COSMIC_BUILD_ARTEFACTS = [
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
 def FOLDERS = [
-  'cosmic',
+  //'cosmic',
   'cosmic-dev'
 ]
 
@@ -70,15 +70,17 @@ def DEFAULT_EXECUTOR     = 'executor'
 def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 FOLDERS.each { folderName ->
-  def seedJob                         = "${folderName}/seed-job"
-  def trackingRepoUpdateSubModules    = "${folderName}/tracking-repo-update-submodules"
-  def customWorkspaceMavenJob         = "${folderName}/custom-workspace-maven-job"
-  def trackingRepoPullRequestBuild    = "${folderName}/tracking-repo-pull-request-build"
-  def trackingRepoMasterBuild         = "${folderName}/tracking-repo-master-build"
-  def trackingRepoBuildAndPackageJob  = "${folderName}/tracking-repo-build-and-package"
-  def trackingRepoPackageJob          = "${folderName}/tracking-repo-package"
-  def prepareInfraForIntegrationTests = "${folderName}/prepare-infrastructure-for-integration-tests"
-  def setupInfraForIntegrationTests   = "${folderName}/setup-infrastructure-for-integration-tests"
+  def seedJob                             = "${folderName}/seed-job"
+  def trackingRepoUpdateSubModules        = "${folderName}/tracking-repo-update-submodules"
+  def customWorkspaceMavenJob             = "${folderName}/custom-workspace-maven-job"
+  def trackingRepoPullRequestBuild        = "${folderName}/tracking-repo-pull-request-build"
+  def trackingRepoMasterBuild             = "${folderName}/tracking-repo-master-build"
+  def trackingRepoBuildAndPackageJob      = "${folderName}/tracking-repo-build-and-package"
+  def packageCosmicJob                    = "${folderName}/tracking-repo-package"
+  def prepareInfraForIntegrationTests     = "${folderName}/prepare-infrastructure-for-integration-tests"
+  def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
+  def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-infrastructure-for-integration-tests"
+  def runIntegrationTests                 = "${folderName}/run-integration-tests"
 
 
   def isDevFolder = folderName.endsWith('-dev')
@@ -218,11 +220,20 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      phase('Setup infrastructure for integration tets') {
+      phase('Setup infrastructure for integration tests') {
         phaseJob(setupInfraForIntegrationTests) {
           currentJobParameters(false)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            sameNode()
+            gitRevision(false)
+          }
+        }
+      }
+      phase('Deploy datacenter') {
+        phaseJob(deployDatacenterForIntegrationTests) {
+          currentJobParameters(false)
+          parameters {
             sameNode()
             gitRevision(false)
           }
@@ -338,14 +349,13 @@ FOLDERS.each { folderName ->
         phaseJob(customWorkspaceMavenJob) {
           currentJobParameters(true)
           parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(false)
           }
         }
       }
       phase('Package artefacts') {
-        phaseJob(trackingRepoPackageJob) {
+        phaseJob(packageCosmicJob) {
           currentJobParameters(true)
           parameters {
             predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
@@ -354,7 +364,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      copyArtifacts(trackingRepoPackageJob) {
+      copyArtifacts(packageCosmicJob) {
         includePatterns(makePatternList(COSMIC_PACKAGING_ARTEFACTS))
         fingerprintArtifacts(true)
         buildSelector {
@@ -429,7 +439,6 @@ FOLDERS.each { folderName ->
     environmentVariables {
       env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
     }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     logRotator {
       numToKeep(50)
       artifactNumToKeep(10)
@@ -439,13 +448,16 @@ FOLDERS.each { folderName ->
       colorizeOutput('xterm')
       timestamps()
     }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    archivingDisabled(true)
+    concurrentBuild(true)
     goals('clean')
     goals('install')
     goals('-Pdeveloper')
-    goals('-T4')
+    goals('-Psystemvm')
   }
 
-  freeStyleJob(trackingRepoPackageJob) {
+  freeStyleJob(packageCosmicJob) {
     parameters {
       stringParam(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR, 'A directory with the cosmic sources and artefacts to use for the job')
     }
@@ -470,9 +482,7 @@ FOLDERS.each { folderName ->
       }
     }
     steps {
-      shell(makeMultiline([
-        'date'
-      ]))
+      shell("${shellPrefix} ./package_cosmic.sh  -d centos7 -f " + injectJobVariable(COSMIC_DIRECTORY_PARAM))
     }
     publishers {
       archiveArtifacts {
@@ -523,8 +533,48 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
-      shell('rm -rf ./*')
       shell("${shellPrefix} /data/shared/ci/ci-setup-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+    }
+  }
+
+  freeStyleJob(deployDatacenterForIntegrationTests) {
+    concurrentBuild()
+    label(executorLabelMct)
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+    }
+  }
+
+  freeStyleJob(runIntegrationTests) {
+    parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    concurrentBuild()
+    label(executorLabelMct)
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
     }
   }
 

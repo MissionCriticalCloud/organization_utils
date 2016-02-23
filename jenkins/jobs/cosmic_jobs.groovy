@@ -39,8 +39,17 @@ def MAVEN_REPORTS = [
   '**/target/failsafe-reports/*.xml'
 ]
 
+def MARVIN_REPORTS = [
+  'nosetests-required_hardware*'
+]
+
 def COSMIC_PACKAGING_ARTEFACTS = [
   'dist/rpmbuild/RPMS/x86_64/cosmic-*.rpm'
+]
+
+def COSMIC_TEST_ARTEFACTS = [
+  'nosetests-required_hardware*',
+  'MarvinLogs/'
 ]
 
 def COSMIC_BUILD_ARTEFACTS = [
@@ -59,7 +68,7 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-plugin-hypervisor-kvm/target/*.jar',
   'cosmic-plugin-hypervisor-ovm3/target/*.jar',
   'cosmic-plugin-hypervisor-xenserver/target/*.jar'
-] + COSMIC_PACKAGING_ARTEFACTS
+] + COSMIC_PACKAGING_ARTEFACTS + COSMIC_TEST_ARTEFACTS
 
 def COSMIC_TESTS_WITH_HARDWARE = [
   'smoke/test_password_server.py',
@@ -287,6 +296,11 @@ FOLDERS.each { folderName ->
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
+        }
+      }
+      archiveXUnit {
+        jUnit {
+          pattern(makePatternList(MARVIN_REPORTS))
         }
       }
     }
@@ -655,7 +669,12 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
+      shell("rm -rf /tmp/MarvinLogs/test_*")
+
       shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(TESTS_PARAM)}")
+
+      shell("mkdir -p MarvinLogs")
+      shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
     }
   }
 

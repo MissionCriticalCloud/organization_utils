@@ -61,6 +61,17 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-plugin-hypervisor-xenserver/target/*.jar'
 ] + COSMIC_PACKAGING_ARTEFACTS
 
+def COSMIC_TESTS_WITHOUT_HARDWARE = [
+  'smoke/test_routers.py',
+  'smoke/test_network_acl.py',
+  'smoke/test_reset_vm_on_reboot.py',
+  'smoke/test_vm_life_cycle.py',
+  'smoke/test_service_offerings.py',
+  'smoke/test_network.py',
+  'component/test_vpc_offerings.py',
+  'component/test_vpc_routers.py'
+]
+
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
 def FOLDERS = [
@@ -83,7 +94,6 @@ FOLDERS.each { folderName ->
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
-
 
   def isDevFolder = folderName.endsWith('-dev')
   def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
@@ -238,6 +248,18 @@ FOLDERS.each { folderName ->
           parameters {
             sameNode()
             gitRevision(false)
+          }
+        }
+      }
+      phase('Run integration tests') {
+        phaseJob(runIntegrationTests) {
+          currentJobParameters(false)
+          parameters {
+            predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
+            sameNode()
+            gitRevision(false)
+            booleanParam(REQUIRED_HARDWARE_PARAM, false)
+            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITHOUT_HARDWARE))
           }
         }
       }
@@ -561,9 +583,10 @@ FOLDERS.each { folderName ->
   freeStyleJob(runIntegrationTests) {
     parameters {
       booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
-      textParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
+      stringParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
       stringParam(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR, 'A directory with the cosmic sources and artefacts to use for the job')
     }
+    customWorkspace(injectJobVariable(COSMIC_DIRECTORY_PARAM))
     concurrentBuild()
     label(executorLabelMct)
     throttleConcurrentBuilds {
@@ -682,6 +705,10 @@ def injectJobVariable(variableName) {
 
 def makePatternList(patterns) {
   return patterns.join(', ')
+}
+
+def makeSpaceSeperatedList(patterns) {
+  return patterns.join(' ')
 }
 
 def makeMultiline(lines) {

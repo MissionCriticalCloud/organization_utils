@@ -61,6 +61,21 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-plugin-hypervisor-xenserver/target/*.jar'
 ] + COSMIC_PACKAGING_ARTEFACTS
 
+def COSMIC_TESTS_WITH_HARDWARE = [
+  'smoke/test_password_server.py',
+  'smoke/test_vpc_redundant.py',
+  'smoke/test_routers_iptables_default_policy.py',
+  'smoke/test_routers_network_ops.py',
+  'smoke/test_vpc_router_nics.py',
+  'smoke/test_router_dhcphosts.py',
+  'smoke/test_loadbalance.py',
+  'smoke/test_internal_lb.py',
+  'smoke/test_ssvm.py',
+  'smoke/test_vpc_vpn.py',
+  'smoke/test_privategw_acl.py',
+  'smoke/test_network.py'
+]
+
 def COSMIC_TESTS_WITHOUT_HARDWARE = [
   'smoke/test_routers.py',
   'smoke/test_network_acl.py',
@@ -94,6 +109,7 @@ FOLDERS.each { folderName ->
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
+  def runIntegrationTest                  = "${folderName}/run-integration-test"
 
   def isDevFolder = folderName.endsWith('-dev')
   def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
@@ -258,8 +274,6 @@ FOLDERS.each { folderName ->
             predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(false)
-            booleanParam(REQUIRED_HARDWARE_PARAM, false)
-            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITHOUT_HARDWARE))
           }
         }
       }
@@ -400,6 +414,47 @@ FOLDERS.each { folderName ->
       archiveArtifacts {
         pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
         onlyIfSuccessful()
+      }
+    }
+  }
+
+    // Job that builds with maven and packaging scripts
+  multiJob(runIntegrationTests) {
+    parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      phase('Run integration tests without hardware') {
+        phaseJob(runIntegrationTest) {
+          currentJobParameters(true)
+          parameters {
+            sameNode()
+            gitRevision(false)
+            booleanParam(REQUIRED_HARDWARE_PARAM, false)
+            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITHOUT_HARDWARE))
+          }
+        }
+      }
+      phase('Run integration tests with hardware') {
+        phaseJob(runIntegrationTest) {
+          currentJobParameters(true)
+          parameters {
+            sameNode()
+            gitRevision(false)
+            booleanParam(REQUIRED_HARDWARE_PARAM, true)
+            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITH_HARDWARE))
+          }
+        }
       }
     }
   }
@@ -580,7 +635,7 @@ FOLDERS.each { folderName ->
     }
   }
 
-  freeStyleJob(runIntegrationTests) {
+  freeStyleJob(runIntegrationTest) {
     parameters {
       booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
       stringParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')

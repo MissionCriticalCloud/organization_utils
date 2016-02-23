@@ -108,8 +108,8 @@ FOLDERS.each { folderName ->
   def prepareInfraForIntegrationTests     = "${folderName}/prepare-infrastructure-for-integration-tests"
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
+  def runAllIntegrationTests              = "${folderName}/run-all-integration-tests"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
-  def runIntegrationTest                  = "${folderName}/run-integration-test"
 
   def isDevFolder = folderName.endsWith('-dev')
   def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
@@ -268,7 +268,7 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Run integration tests') {
-        phaseJob(runIntegrationTests) {
+        phaseJob(runAllIntegrationTests) {
           currentJobParameters(false)
           parameters {
             predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
@@ -418,8 +418,7 @@ FOLDERS.each { folderName ->
     }
   }
 
-    // Job that builds with maven and packaging scripts
-  multiJob(runIntegrationTests) {
+  multiJob(runAllIntegrationTests) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
@@ -435,7 +434,7 @@ FOLDERS.each { folderName ->
     }
     steps {
       phase('Run integration tests without hardware') {
-        phaseJob(runIntegrationTest) {
+        phaseJob(runIntegrationTests) {
           currentJobParameters(true)
           parameters {
             sameNode()
@@ -446,7 +445,7 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Run integration tests with hardware') {
-        phaseJob(runIntegrationTest) {
+        phaseJob(runIntegrationTests) {
           currentJobParameters(true)
           parameters {
             sameNode()
@@ -635,7 +634,7 @@ FOLDERS.each { folderName ->
     }
   }
 
-  freeStyleJob(runIntegrationTest) {
+  freeStyleJob(runIntegrationTests) {
     parameters {
       booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
       stringParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')

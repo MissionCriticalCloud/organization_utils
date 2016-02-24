@@ -52,6 +52,14 @@ def COSMIC_TEST_ARTEFACTS = [
   'MarvinLogs/'
 ]
 
+def CLEAN_UP_JOB_ARTIFACTS = [
+  'vmops.log*',
+  'api.log*',
+  'kvm1-agent-logs/',
+  'kvm2-agent-logs/',
+  'MarvinLogs/'
+]
+
 def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-client/copy-from-cosmic-core/db/db/',
   'cosmic-client/copy-from-cosmic-core/db/create-*.sql',
@@ -68,7 +76,7 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-plugin-hypervisor-kvm/target/*.jar',
   'cosmic-plugin-hypervisor-ovm3/target/*.jar',
   'cosmic-plugin-hypervisor-xenserver/target/*.jar'
-] + COSMIC_PACKAGING_ARTEFACTS + COSMIC_TEST_ARTEFACTS
+] + COSMIC_PACKAGING_ARTEFACTS + COSMIC_TEST_ARTEFACTS + CLEAN_UP_JOB_ARTIFACTS
 
 def COSMIC_TESTS_WITH_HARDWARE = [
   'smoke/test_password_server.py',
@@ -118,6 +126,7 @@ FOLDERS.each { folderName ->
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
   def runAllIntegrationTests              = "${folderName}/run-all-integration-tests"
+  def collectArtifactsAndCleanup          = "${folderName}/collect-artifacts-and-cleanup"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
 
   def isDevFolder = folderName.endsWith('-dev')
@@ -194,8 +203,8 @@ FOLDERS.each { folderName ->
     parameters {
       stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
     }
-    concurrentBuild()
     label(executorLabelMct)
+    concurrentBuild()
     throttleConcurrentBuilds {
       maxPerNode(1)
     }
@@ -443,6 +452,9 @@ FOLDERS.each { folderName ->
       artifactNumToKeep(10)
     }
     concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
     wrappers {
       colorizeOutput('xterm')
       timestamps()
@@ -468,6 +480,31 @@ FOLDERS.each { folderName ->
             predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITH_HARDWARE))
           }
         }
+      }
+    }
+  }
+
+  freeStyleJob(collectArtifactsAndCleanup) {
+    label(executorLabelMct)
+    concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    logRotator {
+      numToKeep(5)
+      artifactNumToKeep(5)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      shell('rm -rf ./*')
+      shell("${shellPrefix} /data/shared/ci/ci-cleanup.sh -m /data/shared/marvin/mct-zone1-kvm1-kvm2.cfg")
+    }
+    publishers {
+      archiveArtifacts {
+        pattern(makePatternList(CLEAN_UP_JOB_ARTIFACTS))
       }
     }
   }
@@ -586,8 +623,8 @@ FOLDERS.each { folderName ->
 
   // Job that prepares the infrastructure for the cosmic integration tests
   freeStyleJob(prepareInfraForIntegrationTests) {
-    concurrentBuild()
     label(executorLabelMct)
+    concurrentBuild()
     throttleConcurrentBuilds {
       maxPerNode(1)
     }
@@ -611,8 +648,8 @@ FOLDERS.each { folderName ->
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    concurrentBuild()
     label(executorLabelMct)
+    concurrentBuild()
     throttleConcurrentBuilds {
       maxPerNode(1)
     }
@@ -630,8 +667,8 @@ FOLDERS.each { folderName ->
   }
 
   freeStyleJob(deployDatacenterForIntegrationTests) {
-    concurrentBuild()
     label(executorLabelMct)
+    concurrentBuild()
     throttleConcurrentBuilds {
       maxPerNode(1)
     }
@@ -655,8 +692,8 @@ FOLDERS.each { folderName ->
       stringParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    concurrentBuild()
     label(executorLabelMct)
+    concurrentBuild()
     throttleConcurrentBuilds {
       maxPerNode(2) // there will be two test runs in parallel (with/without hardware)
     }

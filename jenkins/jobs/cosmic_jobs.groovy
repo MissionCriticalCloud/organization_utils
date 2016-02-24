@@ -437,6 +437,7 @@ FOLDERS.each { folderName ->
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    label(executorLabelMct)
     logRotator {
       numToKeep(50)
       artifactNumToKeep(10)

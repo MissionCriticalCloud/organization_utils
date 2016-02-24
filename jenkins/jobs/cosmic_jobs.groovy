@@ -447,6 +447,7 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
+      shell("rm -rf /tmp/MarvinLogs/test_*")
       phase('Run integration tests without hardware') {
         phaseJob(runIntegrationTests) {
           currentJobParameters(true)
@@ -669,8 +670,6 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
-      shell("rm -rf /tmp/MarvinLogs/test_*")
-
       shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(TESTS_PARAM)}")
 
       shell("mkdir -p MarvinLogs")

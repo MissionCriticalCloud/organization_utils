@@ -651,11 +651,11 @@ FOLDERS.each { folderName ->
 
   freeStyleJob(runIntegrationTests) {
     parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
       booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
       stringParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
-      stringParam(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR, 'A directory with the cosmic sources and artefacts to use for the job')
     }
-    customWorkspace(injectJobVariable(COSMIC_DIRECTORY_PARAM))
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     concurrentBuild()
     label(executorLabelMct)
     throttleConcurrentBuilds {

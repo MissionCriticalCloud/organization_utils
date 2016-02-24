@@ -280,7 +280,7 @@ FOLDERS.each { folderName ->
         phaseJob(runAllIntegrationTests) {
           currentJobParameters(false)
           parameters {
-            predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(false)
           }

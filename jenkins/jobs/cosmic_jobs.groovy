@@ -449,7 +449,7 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell("rm -rf /tmp/MarvinLogs/test_*")
-      phase('Run integration tests without hardware') {
+      phase('Run integration tests ') {
         phaseJob(runIntegrationTests) {
           currentJobParameters(true)
           parameters {
@@ -459,8 +459,6 @@ FOLDERS.each { folderName ->
             predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITHOUT_HARDWARE))
           }
         }
-      }
-      phase('Run integration tests with hardware') {
         phaseJob(runIntegrationTests) {
           currentJobParameters(true)
           parameters {

@@ -659,7 +659,7 @@ FOLDERS.each { folderName ->
     concurrentBuild()
     label(executorLabelMct)
     throttleConcurrentBuilds {
-      maxPerNode(1)
+      maxPerNode(2) // there will be two test runs in parallel (with/without hardware)
     }
     logRotator {
       numToKeep(50)
@@ -671,7 +671,6 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(TESTS_PARAM)}")
-
       shell("mkdir -p MarvinLogs")
       shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
     }

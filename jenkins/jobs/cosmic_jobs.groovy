@@ -43,6 +43,8 @@ def MARVIN_REPORTS = [
   'nosetests-required_hardware*'
 ]
 
+def XUNIT_REPORTS = MARVIN_REPORTS + MAVEN_REPORTS
+
 def COSMIC_PACKAGING_ARTEFACTS = [
   'dist/rpmbuild/RPMS/x86_64/cosmic-*.rpm'
 ]
@@ -53,8 +55,7 @@ def COSMIC_TEST_ARTEFACTS = [
 ]
 
 def CLEAN_UP_JOB_ARTIFACTS = [
-  'vmops.log*',
-  'api.log*',
+  'cs1-management-logs/',
   'kvm1-agent-logs/',
   'kvm2-agent-logs/'
 ]
@@ -276,6 +277,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell('rm -rf /tmp/MarvinLogs/DeployDataCenter_*')
       phase('Deploy datacenter') {
         phaseJob(deployDatacenterForIntegrationTests) {
           currentJobParameters(false)
@@ -285,8 +287,11 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell("mkdir -p MarvinLogs")
+      shell('cp -rf /tmp/MarvinLogs/DeployDataCenter_* MarvinLogs/')
       shell("rm -rf /tmp/MarvinLogs/test_*")
       phase('Run integration tests') {
+        continuationCondition('ALWAYS')
         phaseJob(runIntegrationTestsWithHardware) {
           currentJobParameters(false)
           parameters {
@@ -304,6 +309,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
       phase('Archive and cleanup') {
         phaseJob(collectArtifactsAndCleanup) {
           currentJobParameters(false)
@@ -326,15 +332,10 @@ FOLDERS.each { folderName ->
         pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
         onlyIfSuccessful()
       }
-      archiveJunit(makePatternList(MAVEN_REPORTS)) {
+      archiveJunit(makePatternList(XUNIT_REPORTS)) {
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
-        }
-      }
-      archiveXUnit {
-        jUnit {
-          pattern(makePatternList(MARVIN_REPORTS))
         }
       }
     }
@@ -488,7 +489,13 @@ FOLDERS.each { folderName ->
     steps {
       downstreamParameterized {
         trigger(runIntegrationTests) {
+          block {
+            buildStepFailure('never')
+            failure('never')
+            unstable('never')
+          }
           parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(false)
             booleanParam(REQUIRED_HARDWARE_PARAM, true)
@@ -521,7 +528,13 @@ FOLDERS.each { folderName ->
     steps {
       downstreamParameterized {
         trigger(runIntegrationTests) {
+          block {
+            buildStepFailure('never')
+            failure('never')
+            unstable('never')
+          }
           parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(false)
             booleanParam(REQUIRED_HARDWARE_PARAM, false)
@@ -755,8 +768,6 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
-      shell("mkdir -p MarvinLogs")
-      shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
     }
   }
 

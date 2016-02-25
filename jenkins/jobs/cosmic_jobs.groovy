@@ -107,7 +107,7 @@ def COSMIC_TESTS_WITHOUT_HARDWARE = [
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
 def FOLDERS = [
-  //'cosmic',
+  'cosmic',
   'cosmic-dev'
 ]
 
@@ -602,7 +602,7 @@ FOLDERS.each { folderName ->
           'git config --global user.name "mccd-jenkins"',
           'if [ -z "$(git status -su)" ]; then',
           '  echo "==> No submodule changed"',
-          '  exit',
+          '  exit 1',
           'else',
           '  echo "==> Updating all submodules in remote repository"',
           '  git add --all',

@@ -56,8 +56,7 @@ def CLEAN_UP_JOB_ARTIFACTS = [
   'vmops.log*',
   'api.log*',
   'kvm1-agent-logs/',
-  'kvm2-agent-logs/',
-  'MarvinLogs/'
+  'kvm2-agent-logs/'
 ]
 
 def COSMIC_BUILD_ARTEFACTS = [
@@ -303,6 +302,22 @@ FOLDERS.each { folderName ->
             gitRevision(false)
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
           }
+        }
+      }
+      phase('Archive and cleanup') {
+        phaseJob(collectArtifactsAndCleanup) {
+          currentJobParameters(false)
+          parameters {
+            sameNode()
+            gitRevision(false)
+          }
+        }
+      }
+      copyArtifacts(collectArtifactsAndCleanup) {
+        includePatterns(makePatternList(CLEAN_UP_JOB_ARTIFACTS))
+        fingerprintArtifacts(true)
+        buildSelector {
+          multiJobBuild()
         }
       }
     }

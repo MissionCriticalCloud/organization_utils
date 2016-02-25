@@ -245,7 +245,6 @@ FOLDERS.each { folderName ->
               predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
               sameNode()
               gitRevision(false)
-              killPhaseCondition('FAILURE')
             }
           }
         }

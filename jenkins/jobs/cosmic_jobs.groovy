@@ -125,7 +125,8 @@ FOLDERS.each { folderName ->
   def prepareInfraForIntegrationTests     = "${folderName}/prepare-infrastructure-for-integration-tests"
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
-  def runAllIntegrationTests              = "${folderName}/run-all-integration-tests"
+  def runIntegrationTestsWithHardware     = "${folderName}/run-integration-tests-with-hardware"
+  def runIntegrationTestsWithoutHardware  = "${folderName}/run-integration-tests-without-hardware"
   def collectArtifactsAndCleanup          = "${folderName}/collect-artifacts-and-cleanup"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
 
@@ -285,13 +286,22 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell("rm -rf /tmp/MarvinLogs/test_*")
       phase('Run integration tests') {
-        phaseJob(runAllIntegrationTests) {
+        phaseJob(runIntegrationTestsWithHardware) {
           currentJobParameters(false)
           parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(false)
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+          }
+        }
+        phaseJob(runIntegrationTestsWithoutHardware) {
+          currentJobParameters(false)
+          parameters {
+            sameNode()
+            gitRevision(false)
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
           }
         }
       }
@@ -441,9 +451,10 @@ FOLDERS.each { folderName ->
     }
   }
 
-  multiJob(runAllIntegrationTests) {
+  freeStyleJob(runIntegrationTestsWithHardware) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of Marvin tests to execute')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     label(executorLabelMct)
@@ -460,24 +471,46 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
-      shell("rm -rf /tmp/MarvinLogs/test_*")
-      phase('Run integration tests ') {
-        phaseJob(runIntegrationTests) {
-          currentJobParameters(true)
-          parameters {
-            sameNode()
-            gitRevision(false)
-            booleanParam(REQUIRED_HARDWARE_PARAM, false)
-            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITHOUT_HARDWARE))
-          }
-        }
-        phaseJob(runIntegrationTests) {
-          currentJobParameters(true)
+      downstreamParameterized {
+        trigger(runIntegrationTests) {
           parameters {
             sameNode()
             gitRevision(false)
             booleanParam(REQUIRED_HARDWARE_PARAM, true)
-            predefinedProp(TESTS_PARAM, makeSpaceSeperatedList(COSMIC_TESTS_WITH_HARDWARE))
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
+          }
+        }
+      }
+    }
+  }
+
+  freeStyleJob(runIntegrationTestsWithoutHardware) {
+    parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITHOUT_HARDWARE) : COSMIC_TESTS_WITHOUT_HARDWARE), 'Set of Marvin tests to execute')
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    label(executorLabelMct)
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    steps {
+      downstreamParameterized {
+        trigger(runIntegrationTests) {
+          parameters {
+            sameNode()
+            gitRevision(false)
+            booleanParam(REQUIRED_HARDWARE_PARAM, false)
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
           }
         }
       }
@@ -611,7 +644,7 @@ FOLDERS.each { folderName ->
       }
     }
     steps {
-      shell("${shellPrefix} ./package_cosmic.sh  -d centos7 -f " + injectJobVariable(COSMIC_DIRECTORY_PARAM))
+      shell("${shellPrefix} ./package_cosmic.sh  -d centos7 -f ${injectJobVariable(COSMIC_DIRECTORY_PARAM)}")
     }
     publishers {
       archiveArtifacts {
@@ -689,7 +722,7 @@ FOLDERS.each { folderName ->
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
       booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
-      stringParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
+      textParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     label(executorLabelMct)
@@ -706,7 +739,7 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
-      shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(TESTS_PARAM)}")
+      shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
       shell("mkdir -p MarvinLogs")
       shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
     }
@@ -811,15 +844,28 @@ def injectJobVariable(variableName) {
 }
 
 def makePatternList(patterns) {
-  return patterns.join(', ')
-}
-
-def makeSpaceSeperatedList(patterns) {
-  return patterns.join(' ')
+  return listToStringWithSeparator(', ', patterns)
 }
 
 def makeMultiline(lines) {
-  return lines.join('\n')
+  return listToStringWithSeparator('\n', lines)
+}
+
+def makeSpaceSeperatedList(elements) {
+  return listToStringWithSeparator(' ', elements)
+}
+
+def listToStringWithSeparator(separator, list) {
+  return list.join(separator)
+}
+
+def flattenLines(lines) {
+  return lines.replaceAll('\n', ' ')
+}
+
+def subArray(array) {
+  def endIndex = array.size() > 1 ? 1 : 0
+  return array[0..endIndex]
 }
 
 def getFakeRepos() { return [ new FakeRepo('cosmic-client'), new FakeRepo('cosmic-core') ] }

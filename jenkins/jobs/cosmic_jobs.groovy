@@ -117,11 +117,11 @@ def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 FOLDERS.each { folderName ->
   def seedJob                             = "${folderName}/seed-job"
   def trackingRepoUpdate                  = "${folderName}/tracking-repo-update"
-  def customWorkspaceMavenJob             = "${folderName}/custom-workspace-maven-job"
+  def mavenBuild                          = "${folderName}/maven-build"
   def trackingRepoPullRequestBuild        = "${folderName}/tracking-repo-pull-request-build"
-  def trackingRepoMasterBuild             = "${folderName}/tracking-repo-master-build"
+  def trackingRepoBuild                   = "${folderName}/tracking-repo-build"
   def trackingRepoBuildAndPackageJob      = "${folderName}/tracking-repo-build-and-package"
-  def packageCosmicJob                    = "${folderName}/tracking-repo-package"
+  def packageCosmicJob                    = "${folderName}/rpm-package"
   def prepareInfraForIntegrationTests     = "${folderName}/prepare-infrastructure-for-integration-tests"
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
@@ -250,9 +250,9 @@ FOLDERS.each { folderName ->
     }
   }
 
-  // Build for master branch of tracking repo
-  multiJob(trackingRepoMasterBuild) {
-    displayName('Cosmic master build')
+  // Build for a branch of tracking repo
+  multiJob(trackingRepoBuild) {
+    displayName('Cosmic full build')
     parameters {
       stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
     }
@@ -427,7 +427,7 @@ FOLDERS.each { folderName ->
     }
     steps {
       phase('Build maven project') {
-        phaseJob(customWorkspaceMavenJob) {
+        phaseJob(mavenBuild) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
@@ -470,7 +470,7 @@ FOLDERS.each { folderName ->
     }
     steps {
       phase('Build maven project') {
-        phaseJob(customWorkspaceMavenJob) {
+        phaseJob(mavenBuild) {
           currentJobParameters(true)
           parameters {
             sameNode()
@@ -609,7 +609,7 @@ FOLDERS.each { folderName ->
 
   // generic Maven job that builds on a folder (instead of a git repo)
   // this job is meant to be called by another job that already checked out a maven project
-  mavenJob(customWorkspaceMavenJob) {
+  mavenJob(mavenBuild) {
     parameters {
       credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
         type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
@@ -819,7 +819,7 @@ FOLDERS.each { folderName ->
       }
       steps {
         phase('Build maven project') {
-          phaseJob(customWorkspaceMavenJob) {
+          phaseJob(mavenBuild) {
             currentJobParameters(true)
             parameters {
               predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)

@@ -270,7 +270,9 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     triggers {
-      githubPush()
+      if (!isDevFolder) {
+        githubPush()
+      }
     }
     scm {
       git {
@@ -278,7 +280,7 @@ FOLDERS.each { folderName ->
           github(COSMIC_GITHUB_REPOSITORY, 'ssh')
           credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
           name('origin')
-          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
+          refspec('+refs/heads/master')
         }
         branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
         clean(true)

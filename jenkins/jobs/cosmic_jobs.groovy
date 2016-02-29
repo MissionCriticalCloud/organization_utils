@@ -116,7 +116,7 @@ def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 FOLDERS.each { folderName ->
   def seedJob                             = "${folderName}/seed-job"
-  def trackingRepoUpdateSubModules        = "${folderName}/tracking-repo-update-submodules"
+  def trackingRepoUpdate                  = "${folderName}/tracking-repo-update"
   def customWorkspaceMavenJob             = "${folderName}/custom-workspace-maven-job"
   def trackingRepoPullRequestBuild        = "${folderName}/tracking-repo-pull-request-build"
   def trackingRepoMasterBuild             = "${folderName}/tracking-repo-master-build"
@@ -198,9 +198,8 @@ FOLDERS.each { folderName ->
     }
   }
 
-  // Build for master branch of tracking repo
-  multiJob(trackingRepoMasterBuild) {
-    displayName('Cosmic master build')
+  freeStyleJob(trackingRepoUpdate) {
+    displayName('Cosmic tracking repo update')
     parameters {
       stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
     }
@@ -225,6 +224,57 @@ FOLDERS.each { folderName ->
     scm {
       git {
         remote {
+          github(COSMIC_GITHUB_REPOSITORY, 'ssh' )
+          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+        }
+        branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
+        shallowClone(false)
+        clean(true)
+        recursiveSubmodules(true)
+        trackingSubmodules(true)
+      }
+    }
+    steps {
+      shell(makeMultiline([
+        'git config --global user.email "int-mccd_jenkins@schubergphilis.com"',
+        'git config --global user.name "mccd-jenkins"',
+        'if [ -z "$(git status -su)" ]; then',
+        '  echo "==> No submodule changed"',
+        'else',
+        '  echo "==> Updating all submodules in remote repository"',
+        '  git add --all',
+        '  git commit -m "Update all submodules to latest HEAD"',
+        '  git push origin HEAD:master',
+        'fi'
+      ]))
+    }
+  }
+
+  // Build for master branch of tracking repo
+  multiJob(trackingRepoMasterBuild) {
+    displayName('Cosmic master build')
+    parameters {
+      stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
+    }
+    label(executorLabelMct)
+    concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    triggers {
+      githubPush()
+    }
+    scm {
+      git {
+        remote {
           github(COSMIC_GITHUB_REPOSITORY, 'ssh')
           credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
           name('origin')
@@ -233,22 +283,10 @@ FOLDERS.each { folderName ->
         branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
         clean(true)
         recursiveSubmodules(true)
-        trackingSubmodules(true)
+        trackingSubmodules(false)
       }
     }
     steps {
-      if (!isDevFolder) {
-        phase('Update tracking repository') {
-          continuationCondition('SUCCESSFUL')
-          phaseJob(trackingRepoUpdateSubModules) {
-            parameters {
-              predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-              sameNode()
-              gitRevision(false)
-            }
-          }
-        }
-      }
       phase('Build maven project and prepare infrastructure for integrations tests') {
         phaseJob(trackingRepoBuildAndPackageJob) {
           currentJobParameters(true)
@@ -565,50 +603,6 @@ FOLDERS.each { folderName ->
     publishers {
       archiveArtifacts {
         pattern(makePatternList(CLEAN_UP_JOB_ARTIFACTS))
-      }
-    }
-  }
-
-  if(!isDevFolder) {
-    // Job that checks for changes in the sub-repos of the tracking repo
-    // when there are changes it pulls them in and pushes a new commit
-    freeStyleJob(trackingRepoUpdateSubModules) {
-      displayName('Cosmic tracking repository scheduled update')
-      logRotator {
-        numToKeep(100)
-        artifactNumToKeep(10)
-      }
-      wrappers {
-        colorizeOutput('xterm')
-        timestamps()
-      }
-      scm {
-        git {
-          remote {
-            github(COSMIC_GITHUB_REPOSITORY, 'ssh' )
-            credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-          }
-          branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
-          shallowClone(false)
-          clean(true)
-          recursiveSubmodules(true)
-          trackingSubmodules(true)
-        }
-      }
-      steps {
-        shell(makeMultiline([
-          'git config --global user.email "int-mccd_jenkins@schubergphilis.com"',
-          'git config --global user.name "mccd-jenkins"',
-          'if [ -z "$(git status -su)" ]; then',
-          '  echo "==> No submodule changed"',
-          '  exit 1',
-          'else',
-          '  echo "==> Updating all submodules in remote repository"',
-          '  git add --all',
-          '  git commit -m "Update all submodules to latest HEAD"',
-          '  git push origin HEAD:master',
-          'fi'
-        ]))
       }
     }
   }

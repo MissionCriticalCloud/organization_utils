@@ -119,6 +119,7 @@ FOLDERS.each { folderName ->
   def trackingRepoUpdate                  = "${folderName}/tracking-repo-update"
   def mavenBuild                          = "${folderName}/maven-build"
   def trackingRepoPullRequestBuild        = "${folderName}/tracking-repo-pull-request-build"
+  def trackingRepoMasterBuild             = "${folderName}/tracking-repo-master-build"
   def trackingRepoBuild                   = "${folderName}/tracking-repo-build"
   def trackingRepoBuildAndPackageJob      = "${folderName}/tracking-repo-build-and-package"
   def packageCosmicJob                    = "${folderName}/rpm-package"
@@ -250,9 +251,8 @@ FOLDERS.each { folderName ->
     }
   }
 
-  // Build for a branch of tracking repo
-  multiJob(trackingRepoBuild) {
-    displayName('Cosmic full build')
+  freeStyleJob(trackingRepoMasterBuild) {
+    displayName('Cosmic master full build')
     parameters {
       stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
     }
@@ -281,6 +281,52 @@ FOLDERS.each { folderName ->
           credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
           name('origin')
           refspec('+refs/heads/master')
+        }
+        branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
+        clean(true)
+        recursiveSubmodules(true)
+        trackingSubmodules(false)
+      }
+    }
+    steps {
+      downstreamParameterized {
+        trigger(trackingRepoBuild) {
+          block {
+            buildStepFailure('never')
+            failure('never')
+            unstable('never')
+          }
+        }
+      }
+    }
+  }
+
+  // Build for a branch of tracking repo
+  multiJob(trackingRepoBuild) {
+    displayName('Cosmic full build')
+    parameters {
+      stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
+    }
+    label(executorLabelMct)
+    concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    scm {
+      git {
+        remote {
+          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
+          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+          name('origin')
+          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
         branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
         clean(true)

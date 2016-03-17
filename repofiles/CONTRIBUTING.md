@@ -1,19 +1,18 @@
 # How to contribute to Cosmic
 
-We like to encourage you to contribute to the repository.
+We like to encourage you to contribute to the project in any way or capacity that you see fit.
 This should be as easy as possible for you but there are a few things to consider when contributing.
-The following guidelines for contribution should be followed if you want to submit a pull request.
+The following guidelines for contribution should be followed, as much as possible, if you want to submit a pull request.
 If you lack knowledge or experience to complete some of these steps, but you are willing to learn and invest time, please submit your contribution anyway so we can possibly help you and still benefit both from the experience and code.
 
 ## How to prepare
 
 * You need a [GitHub account](https://github.com/signup/free)
+* You need to configure an SSH key in your profile, otherwise you won't be able to clone our [tracking repo](https://github.com/MissionCriticalCloud/cosmic).
 * Submit an [issue ticket](https://github.com/MissionCriticalCloud/cosmic/issues) for your issue if there is not one yet.
 	* Describe the issue and include steps to reproduce when it's a bug.
 	* Ensure to mention the exact version(s) that you know is affected.
-  * If you plan on submitting a bug report, please submit debug-level logs along
-    with the report using [gist](https://gist.github.com/) or some other paste
-    service.
+  * If you plan on submitting a bug report, please submit debug-level logs along with the report using [gist](https://gist.github.com/) or some other paste service.
 
 ## Make Changes
 
@@ -21,8 +20,10 @@ If you lack knowledge or experience to complete some of these steps, but you are
 * In your forked repository, create a topic branch for your upcoming patch. Do not work directly on the master branch.
 	* Create a branch based on master; `git branch fix/my_contribution master`
 	* Checkout the new branch with `git checkout fix/my_contribution`.
-* Adhere to [defined code conventions](https://github.com/MissionCriticalCloud/checkstyle)
-* Make commits of logical self-contained units and describe them properly.
+  * Or, in a one-liner, `git checkout -b fix/my_contribution master`
+  * As a general rule, we use `fix/`, `feature/`, `tech/` prefixes in tocpi branches to denote bug fixes, new features and technical improvments, respectivelly
+* Adhere to [defined code conventions](https://github.com/MissionCriticalCloud/checkstyle). We provide IDE configurations for Eclipes and InteliJ, as well as a checkstyle definition.
+* Make commits of logical self-contained units and describe each atomic change properly.
 * Submit tests to your patch / new feature so it can be tested easily.
 * Rebase `fix/my_contribution` to include latest updates from `upstream/master`:
 ```
@@ -30,7 +31,7 @@ $ git remote add upstream https://github.com/MissionCriticalCloud/cosmic.git
 $ git fetch upstream
 $ git rebase upstream/master
 ```
-* Assure nothing is broken by running all the tests (Unit, System, Integration).
+* Assure nothing is broken by running all the tests (Unit, Integration, System).
 
 ## Submit Changes
 
@@ -38,7 +39,6 @@ $ git rebase upstream/master
 * Open a pull request to the original repository and choose the right original branch you want to patch.
 * If not done in commit messages (which you really should do) please reference and update your issue with the code changes.
 * Even if you have write access to the repository, do not directly push or merge pull-requests. Let another team member review your pull request and approve.
-
 
 # Additional Resources
 

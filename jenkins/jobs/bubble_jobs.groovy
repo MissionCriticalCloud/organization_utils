@@ -103,7 +103,7 @@ freeStyleJob(TRACKING_REPO_UPDATE_JOB) {
       "  echo \"=> Clean berkshelf cache\"",
       "  rm -rf ~/.berkshelf/cookbooks/*",
       "",
-      "  TMP_UUID=\"/tmp/`uuidgen`\"",
+      "  TMP_UUID=\"/tmp/\$(uuidgen)\"",
       "  echo \"=> Create tmp working directory \$TMP_UUID\"",
       "  mkdir \$TMP_UUID",
       "",

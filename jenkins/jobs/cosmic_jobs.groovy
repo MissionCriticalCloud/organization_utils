@@ -258,9 +258,6 @@ FOLDERS.each { folderName ->
 
   freeStyleJob(trackingRepoMasterBuild) {
     displayName('Cosmic master full build')
-    parameters {
-      stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
-    }
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
@@ -296,10 +293,13 @@ FOLDERS.each { folderName ->
     steps {
       downstreamParameterized {
         trigger(trackingRepoBuild) {
+          parameters {
+            predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master')
+          }
           block {
-            buildStepFailure('never')
-            failure('never')
-            unstable('never')
+            buildStepFailure('unstable')
+            failure('failure')
+            unstable('unstable')
           }
         }
       }

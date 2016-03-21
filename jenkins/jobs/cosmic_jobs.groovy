@@ -288,12 +288,6 @@ FOLDERS.each { folderName ->
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(false)
-        configure { node ->
-          node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-            includedRegions '**'
-            excludedRegions ''
-          }
-        }
       }
     }
     steps {

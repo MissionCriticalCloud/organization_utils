@@ -109,7 +109,7 @@ def COSMIC_TESTS_WITHOUT_HARDWARE = [
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
 def FOLDERS = [
-  //'cosmic',
+  'cosmic',
   'cosmic-dev'
 ]
 
@@ -258,9 +258,6 @@ FOLDERS.each { folderName ->
 
   freeStyleJob(trackingRepoMasterBuild) {
     displayName('Cosmic master full build')
-    parameters {
-      stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
-    }
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
@@ -291,15 +288,24 @@ FOLDERS.each { folderName ->
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(false)
+        configure { node ->
+          node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
+            includedRegions '**'
+            excludedRegions ''
+          }
+        }
       }
     }
     steps {
       downstreamParameterized {
         trigger(trackingRepoBuild) {
+          parameters {
+            predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master')
+          }
           block {
-            buildStepFailure('never')
-            failure('never')
-            unstable('never')
+            buildStepFailure('unstable')
+            failure('failure')
+            unstable('unstable')
           }
         }
       }

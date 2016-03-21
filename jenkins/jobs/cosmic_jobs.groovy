@@ -21,6 +21,7 @@ def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
 def GITHUB_REPOSITORY_NAME_PARAM     = 'githubRepository'
 def GITHUB_OAUTH2_CREDENTIAL_PARAM   = 'mccdJenkinsOauth2'
+def SONAR_RUNNER_PASSWORD_PARAM      = 'sonarRunnerPassword'
 def ARTEFACTS_TO_ARCHIVE_PARAM       = 'artefactsToArchive'
 def REQUIRED_HARDWARE_PARAM          = 'requiredHardware'
 def TESTS_PARAM                      = 'tests'
@@ -31,6 +32,7 @@ def DEFAULT_GITHUB_JOB_LABEL = 'mccd jenkins build'
 
 def MCCD_JENKINS_GITHUB_CREDENTIALS       = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4dfc'
+def SONAR_RUNNER_PASSOWRD_CREDENTIALS     = 'df77a17c-5613-4fdf-8c49-52789b613e51'
 
 def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-kvm1-kvm2.cfg'
 
@@ -107,7 +109,7 @@ def COSMIC_TESTS_WITHOUT_HARDWARE = [
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
 def FOLDERS = [
-  'cosmic',
+  //'cosmic',
   'cosmic-dev'
 ]
 
@@ -118,6 +120,7 @@ FOLDERS.each { folderName ->
   def seedJob                             = "${folderName}/seed-job"
   def trackingRepoUpdate                  = "${folderName}/tracking-repo-update"
   def mavenBuild                          = "${folderName}/maven-build"
+  def mavenSonarBuild                     = "${folderName}/maven-sonar-buid"
   def trackingRepoPullRequestBuild        = "${folderName}/tracking-repo-pull-request-build"
   def trackingRepoMasterBuild             = "${folderName}/tracking-repo-master-build"
   def trackingRepoBuild                   = "${folderName}/tracking-repo-build"
@@ -199,55 +202,57 @@ FOLDERS.each { folderName ->
     }
   }
 
-  freeStyleJob(trackingRepoUpdate) {
-    displayName('Cosmic tracking repo update')
-    parameters {
-      stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
-    }
-    label(executorLabelMct)
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      maxPerNode(1)
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    triggers {
-      if (!isDevFolder) {
-        cron('H/15 * * * *')
+  if(!isDevFolder) {
+    freeStyleJob(trackingRepoUpdate) {
+      displayName('Cosmic tracking repo update')
+      parameters {
+        stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
       }
-    }
-    scm {
-      git {
-        remote {
-          github(COSMIC_GITHUB_REPOSITORY, 'ssh' )
-          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+      label(executorLabelMct)
+      concurrentBuild()
+      throttleConcurrentBuilds {
+        maxPerNode(1)
+      }
+      logRotator {
+        numToKeep(50)
+        artifactNumToKeep(10)
+      }
+      wrappers {
+        colorizeOutput('xterm')
+        timestamps()
+      }
+      triggers {
+        if (!isDevFolder) {
+          cron('H/15 * * * *')
         }
-        branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
-        shallowClone(false)
-        clean(true)
-        recursiveSubmodules(true)
-        trackingSubmodules(true)
       }
-    }
-    steps {
-      shell(makeMultiline([
-        'git config --global user.email "int-mccd_jenkins@schubergphilis.com"',
-        'git config --global user.name "mccd-jenkins"',
-        'if [ -z "$(git status -su)" ]; then',
-        '  echo "==> No submodule changed"',
-        'else',
-        '  echo "==> Updating all submodules in remote repository"',
-        '  git add --all',
-        '  git commit -m "Update all submodules to latest HEAD"',
-        '  git push origin HEAD:master',
-        'fi'
-      ]))
+      scm {
+        git {
+          remote {
+            github(COSMIC_GITHUB_REPOSITORY, 'ssh' )
+            credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+          }
+          branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
+          shallowClone(false)
+          clean(true)
+          recursiveSubmodules(true)
+          trackingSubmodules(true)
+        }
+      }
+      steps {
+        shell(makeMultiline([
+          'git config --global user.email "int-mccd_jenkins@schubergphilis.com"',
+          'git config --global user.name "mccd-jenkins"',
+          'if [ -z "$(git status -su)" ]; then',
+          '  echo "==> No submodule changed"',
+          'else',
+          '  echo "==> Updating all submodules in remote repository"',
+          '  git add --all',
+          '  git commit -m "Update all submodules to latest HEAD"',
+          '  git push origin HEAD:master',
+          'fi'
+        ]))
+      }
     }
   }
 
@@ -394,8 +399,19 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh")
+      phase('Sonar analysis') {
+        phaseJob(mavenSonarBuild) {
+          currentJobParameters(false)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            sameNode()
+            gitRevision(false)
+          }
+        }
+      }
       shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
-      phase('Archive and cleanup') {
+      phase('Report, Archive and Cleanup') {
         phaseJob(collectArtifactsAndCleanup) {
           currentJobParameters(false)
           parameters {
@@ -421,6 +437,18 @@ FOLDERS.each { folderName ->
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
+        }
+      }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
         }
       }
     }
@@ -492,6 +520,18 @@ FOLDERS.each { folderName ->
             publishTestStabilityData()
         }
       }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
     }
   }
 
@@ -549,6 +589,18 @@ FOLDERS.each { folderName ->
         pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
         onlyIfSuccessful()
       }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
     }
   }
 
@@ -586,6 +638,20 @@ FOLDERS.each { folderName ->
             booleanParam(REQUIRED_HARDWARE_PARAM, true)
             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
           }
+        }
+      }
+    }
+    publishers{
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
         }
       }
     }
@@ -628,6 +694,20 @@ FOLDERS.each { folderName ->
         }
       }
     }
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
+    }
   }
 
   freeStyleJob(collectArtifactsAndCleanup) {
@@ -651,6 +731,18 @@ FOLDERS.each { folderName ->
     publishers {
       archiveArtifacts {
         pattern(makePatternList(CLEAN_UP_JOB_ARTIFACTS))
+      }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
       }
     }
   }
@@ -686,6 +778,72 @@ FOLDERS.each { folderName ->
     goals('install')
     goals('-Pdeveloper')
     goals('-Psystemvm')
+    goals('-Psonar-ci-cosmic')
+    goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
+    }
+  }
+
+  mavenJob(mavenSonarBuild) {
+    parameters {
+      credentialsParam(SONAR_RUNNER_PASSWORD_PARAM) {
+        type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
+        required()
+        defaultValue(SONAR_RUNNER_PASSOWRD_CREDENTIALS)
+        description('sonar-runner user credentials')
+      }
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    environmentVariables {
+      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+      credentialsBinding {
+          usernamePassword('SONAR_RUNNER_USERNAME', 'SONAR_RUNNER_PASSWORD', 'SONAR_RUNNER_PASSWORD_PARAM')
+      }
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    archivingDisabled(true)
+    concurrentBuild(true)
+    goals('sonar:sonar')
+    goals('-Psonar-ci-cosmic')
+    goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")
+    goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+    goals("-DskipITs")
+    goals("-Dsonar.branch=${isDevFolder ? 'development' : 'production'}-build")
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
+    }
   }
 
   freeStyleJob(packageCosmicJob) {
@@ -720,6 +878,18 @@ FOLDERS.each { folderName ->
         pattern(makePatternList(COSMIC_PACKAGING_ARTEFACTS))
         onlyIfSuccessful()
       }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
     }
   }
 
@@ -741,6 +911,20 @@ FOLDERS.each { folderName ->
     steps {
       shell('rm -rf ./*')
       shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+    }
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
     }
   }
 
@@ -766,6 +950,20 @@ FOLDERS.each { folderName ->
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-setup-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
     }
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
+    }
   }
 
   freeStyleJob(deployDatacenterForIntegrationTests) {
@@ -784,6 +982,20 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+    }
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
     }
   }
 
@@ -809,6 +1021,20 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
+    }
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
     }
   }
 
@@ -877,13 +1103,25 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      if(repoName != 'cosmic-client') {
-        publishers {
+      publishers {
+        if(repoName != 'cosmic-client') {
           archiveJunit(makePatternList(MAVEN_REPORTS)) {
             retainLongStdout(true)
             testDataPublishers {
                 publishTestStabilityData()
             }
+          }
+        }
+        if(!isDevFolder) {
+          slackNotifications {
+            notifyBuildStart()
+            notifyAborted()
+            notifyFailure()
+            notifyNotBuilt()
+            notifyUnstable()
+            notifyBackToNormal()
+            includeTestSummary()
+            showCommitList()
           }
         }
       }

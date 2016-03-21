@@ -284,7 +284,7 @@ FOLDERS.each { folderName ->
           name('origin')
           refspec('+refs/heads/master')
         }
-        branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
+        branch('master')
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(false)

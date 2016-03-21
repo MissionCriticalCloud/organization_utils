@@ -303,9 +303,9 @@ FOLDERS.each { folderName ->
             predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master')
           }
           block {
-            buildStepFailure('unstable')
-            failure('failure')
-            unstable('unstable')
+            buildStepFailure('UNSTABLE')
+            failure('FAILURE')
+            unstable('UNSTABLE')
           }
         }
       }

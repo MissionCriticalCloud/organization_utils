@@ -824,7 +824,7 @@ FOLDERS.each { folderName ->
       colorizeOutput('xterm')
       timestamps()
       credentialsBinding {
-          usernamePassword('SONAR_RUNNER_USERNAME', 'SONAR_RUNNER_PASSWORD', 'SONAR_RUNNER_PASSWORD_PARAM')
+          usernamePassword('SONAR_RUNNER_USERNAME', 'SONAR_RUNNER_PASSWORD', injectJobVariable(SONAR_RUNNER_PASSWORD_PARAM))
       }
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))

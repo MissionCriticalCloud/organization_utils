@@ -258,11 +258,8 @@ FOLDERS.each { folderName ->
 
   freeStyleJob(trackingRepoMasterBuild) {
     displayName('Cosmic master full build')
-    label(executorLabelMct)
+    label(DEFAULT_EXECUTOR)
     concurrentBuild()
-    throttleConcurrentBuilds {
-      maxPerNode(1)
-    }
     logRotator {
       numToKeep(50)
       artifactNumToKeep(10)

@@ -210,7 +210,7 @@ FOLDERS.each { folderName ->
       parameters {
         stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
       }
-      label(executorLabelMct)
+      label(DEFAULT_EXECUTOR)
       concurrentBuild()
       throttleConcurrentBuilds {
         maxPerNode(1)

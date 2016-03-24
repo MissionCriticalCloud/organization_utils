@@ -123,6 +123,7 @@ FOLDERS.each { folderName ->
   def mavenSonarBuild                     = "${folderName}/maven-sonar-buid"
   def trackingRepoPullRequestBuild        = "${folderName}/tracking-repo-pull-request-build"
   def trackingRepoMasterBuild             = "${folderName}/tracking-repo-master-build"
+  def trackingRepoBranchBuild             = "${folderName}/tracking-repo-branch-build"
   def trackingRepoBuild                   = "${folderName}/tracking-repo-build"
   def trackingRepoBuildAndPackageJob      = "${folderName}/tracking-repo-build-and-package"
   def packageCosmicJob                    = "${folderName}/rpm-package"
@@ -285,12 +286,6 @@ FOLDERS.each { folderName ->
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(false)
-        configure { node ->
-          node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-            includedRegions '**'
-            excludedRegions ''
-          }
-        }
       }
     }
     steps {
@@ -298,6 +293,52 @@ FOLDERS.each { folderName ->
         trigger(trackingRepoBuild) {
           parameters {
             predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master')
+          }
+          block {
+            buildStepFailure('UNSTABLE')
+            failure('FAILURE')
+            unstable('UNSTABLE')
+          }
+        }
+      }
+    }
+  }
+
+  freeStyleJob(trackingRepoBranchBuild) {
+    displayName('Cosmic branch full build')
+    label(DEFAULT_EXECUTOR)
+    concurrentBuild()
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    triggers {
+      if (!isDevFolder) {
+        githubPush()
+      }
+    }
+    scm {
+      git {
+        remote {
+          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
+          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+          name('origin')
+        }
+        branch('build/*')
+        clean(true)
+        recursiveSubmodules(true)
+        trackingSubmodules(false)
+      }
+    }
+    steps {
+      downstreamParameterized {
+        trigger(trackingRepoBuild) {
+          parameters {
+            predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, injectJobVariable('GIT_BRANCH'))
           }
           block {
             buildStepFailure('UNSTABLE')

@@ -123,7 +123,7 @@ FOLDERS.each { folderName ->
   def trackingRepoMasterBuild             = "${folderName}/0001-tracking-repo-master-build"
   def trackingRepoBranchBuild             = "${folderName}/0002-tracking-repo-branch-build"
   def trackingRepoPullRequestBuild        = "${folderName}/0003-tracking-repo-pull-request-build"
-  def trackingRepoBuild                   = "${folderName}/0010-tracking-repo-build"
+  def trackingRepoBuild                   = "${folderName}/0020-tracking-repo-build"
   def trackingRepoBuildAndPackageJob      = "${folderName}/0100-tracking-repo-build-and-package"
   def packageCosmicJob                    = "${folderName}/1000-rpm-package"
   def prepareInfraForIntegrationTests     = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
@@ -973,7 +973,7 @@ FOLDERS.each { folderName ->
     def targetBranch = injectJobVariable(GIT_REPO_BRANCH_PARAM)
     def repoName = cosmicRepo.getName()
     def githubRepository = "${ORGANIZATION_NAME}/" + repoName
-    def repoJobName =  "${folderName}/000${counter++}-plugin-pull-request-build-${repoName}"
+    def repoJobName =  "${folderName}/${String.format("%04d", counter++)}-plugin-pull-request-build-${repoName}"
 
     // job to build cosmic a plugin
     multiJob(repoJobName) {

@@ -327,7 +327,7 @@ FOLDERS.each { folderName ->
           credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
           name('origin')
         }
-        branch('build/*')
+        branch('origin/build/**')
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(false)

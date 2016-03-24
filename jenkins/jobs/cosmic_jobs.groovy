@@ -5,9 +5,9 @@ import org.kohsuke.github.GitHub
 
 def DEFAULT_GIT_REPO_BRANCH = 'remotes/origin/pr/*/head'
 
-def DEFAULT_GIT_REPO_BRANCH_PARAM = 'sha1'
-def CUSTOM_WORKSPACE_PARAM        = 'CUSTOM_WORKSPACE'
-def COSMIC_DIRECTORY_PARAM        = 'COSMIC_DIRECTORY'
+def GIT_REPO_BRANCH_PARAM    = 'sha1'
+def CUSTOM_WORKSPACE_PARAM   = 'CUSTOM_WORKSPACE'
+def COSMIC_DIRECTORY_PARAM   = 'COSMIC_DIRECTORY'
 
 def WORKSPACE_VAR = '${WORKSPACE}'
 
@@ -27,6 +27,8 @@ def REQUIRED_HARDWARE_PARAM          = 'requiredHardware'
 def TESTS_PARAM                      = 'tests'
 
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
+
+def GIT_BRANCH_ENV_VARIABLE_NAME = 'GIT_BRANCH'
 
 def DEFAULT_GITHUB_JOB_LABEL = 'mccd jenkins build'
 
@@ -106,6 +108,9 @@ def COSMIC_TESTS_WITHOUT_HARDWARE = [
   'component/test_vpc_routers.py'
 ]
 
+def DEFAULT_EXECUTOR     = 'executor'
+def DEFAULT_EXECUTOR_MCT = 'executor-mct'
+
 // dev folder is to play arround with jobs.
 // Jobs defined there should never autmatically trigger
 def FOLDERS = [
@@ -113,31 +118,28 @@ def FOLDERS = [
   'cosmic-dev'
 ]
 
-def DEFAULT_EXECUTOR     = 'executor'
-def DEFAULT_EXECUTOR_MCT = 'executor-mct'
-
 FOLDERS.each { folderName ->
-  def seedJob                             = "${folderName}/seed-job"
-  def trackingRepoUpdate                  = "${folderName}/tracking-repo-update"
-  def mavenBuild                          = "${folderName}/maven-build"
-  def mavenSonarBuild                     = "${folderName}/maven-sonar-buid"
-  def trackingRepoPullRequestBuild        = "${folderName}/tracking-repo-pull-request-build"
-  def trackingRepoMasterBuild             = "${folderName}/tracking-repo-master-build"
-  def trackingRepoBranchBuild             = "${folderName}/tracking-repo-branch-build"
-  def trackingRepoBuild                   = "${folderName}/tracking-repo-build"
-  def trackingRepoBuildAndPackageJob      = "${folderName}/tracking-repo-build-and-package"
-  def packageCosmicJob                    = "${folderName}/rpm-package"
-  def prepareInfraForIntegrationTests     = "${folderName}/prepare-infrastructure-for-integration-tests"
-  def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
-  def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
-  def runIntegrationTestsWithHardware     = "${folderName}/run-integration-tests-with-hardware"
-  def runIntegrationTestsWithoutHardware  = "${folderName}/run-integration-tests-without-hardware"
-  def collectArtifactsAndCleanup          = "${folderName}/collect-artifacts-and-cleanup"
-  def runIntegrationTests                 = "${folderName}/run-integration-tests"
+  def trackingRepoUpdate                  = "${folderName}/0000-tracking-repo-update"
+  def trackingRepoMasterBuild             = "${folderName}/0001-tracking-repo-master-build"
+  def trackingRepoBranchBuild             = "${folderName}/0002-tracking-repo-branch-build"
+  def trackingRepoPullRequestBuild        = "${folderName}/0003-tracking-repo-pull-request-build"
+  def trackingRepoBuild                   = "${folderName}/0010-tracking-repo-build"
+  def trackingRepoBuildAndPackageJob      = "${folderName}/0100-tracking-repo-build-and-package"
+  def packageCosmicJob                    = "${folderName}/1000-rpm-package"
+  def prepareInfraForIntegrationTests     = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
+  def setupInfraForIntegrationTests       = "${folderName}/0300-setup-infrastructure-for-integration-tests"
+  def deployDatacenterForIntegrationTests = "${folderName}/0400-deploy-datacenter-for-integration-tests"
+  def runIntegrationTests                 = "${folderName}/0500-run-integration-tests"
+  def collectArtifactsAndCleanup          = "${folderName}/0600-collect-artifacts-and-cleanup"
+  def seedJob                             = "${folderName}/9991-seed-job"
+  def mavenBuild                          = "${folderName}/9998-maven-build"
+  def mavenSonarBuild                     = "${folderName}/9999-maven-sonar-buid"
 
   def isDevFolder = folderName.endsWith('-dev')
-  def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
   def shellPrefix = isDevFolder ? 'bash -x' : ''
+  def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
+
+  def helperJobsFolder = 'helper_jobs' + (isDevFolder ? '_dev' : '')
 
   folder(folderName)
 
@@ -205,9 +207,8 @@ FOLDERS.each { folderName ->
 
   if(!isDevFolder) {
     freeStyleJob(trackingRepoUpdate) {
-      displayName('Cosmic tracking repo update')
       parameters {
-        stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
+        stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
       }
       label(executorLabelMct)
       concurrentBuild()
@@ -258,7 +259,6 @@ FOLDERS.each { folderName ->
   }
 
   freeStyleJob(trackingRepoMasterBuild) {
-    displayName('Cosmic master full build')
     label(DEFAULT_EXECUTOR)
     concurrentBuild()
     logRotator {
@@ -292,7 +292,7 @@ FOLDERS.each { folderName ->
       downstreamParameterized {
         trigger(trackingRepoBuild) {
           parameters {
-            predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master')
+            predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
           }
           block {
             buildStepFailure('UNSTABLE')
@@ -305,7 +305,6 @@ FOLDERS.each { folderName ->
   }
 
   freeStyleJob(trackingRepoBranchBuild) {
-    displayName('Cosmic branch full build')
     label(DEFAULT_EXECUTOR)
     concurrentBuild()
     logRotator {
@@ -338,7 +337,7 @@ FOLDERS.each { folderName ->
       downstreamParameterized {
         trigger(trackingRepoBuild) {
           parameters {
-            predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, injectJobVariable('GIT_BRANCH'))
+            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
           }
           block {
             buildStepFailure('UNSTABLE')
@@ -352,9 +351,9 @@ FOLDERS.each { folderName ->
 
   // Build for a branch of tracking repo
   multiJob(trackingRepoBuild) {
-    displayName('Cosmic full build')
     parameters {
-      stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
+      stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
     }
     label(executorLabelMct)
     concurrentBuild()
@@ -377,7 +376,7 @@ FOLDERS.each { folderName ->
           name('origin')
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
-        branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
+        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(false)
@@ -426,27 +425,20 @@ FOLDERS.each { folderName ->
       shell("rm -rf /tmp/MarvinLogs/test_*")
       phase('Run integration tests') {
         continuationCondition('ALWAYS')
-        phaseJob(runIntegrationTestsWithHardware) {
+        phaseJob(runIntegrationTests) {
           currentJobParameters(false)
           parameters {
             sameNode()
             gitRevision(false)
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-          }
-        }
-        phaseJob(runIntegrationTestsWithoutHardware) {
-          currentJobParameters(false)
-          parameters {
-            sameNode()
-            gitRevision(false)
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
           }
         }
       }
       shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh")
       phase('Sonar analysis') {
         phaseJob(mavenSonarBuild) {
-          currentJobParameters(false)
+          currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
@@ -500,9 +492,8 @@ FOLDERS.each { folderName ->
 
   // build for pull requests to tracking repo
   multiJob(trackingRepoPullRequestBuild) {
-    displayName('Cosmic pull request build')
     parameters {
-      stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'sha1', 'Branch to be built')
+      stringParam(GIT_REPO_BRANCH_PARAM, 'sha1', 'Branch to be built')
     }
     concurrentBuild()
     label(DEFAULT_EXECUTOR)
@@ -522,7 +513,7 @@ FOLDERS.each { folderName ->
           name('origin')
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
-        branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
+        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
         clean(true)
         recursiveSubmodules(true)
         trackingSubmodules(true)
@@ -648,112 +639,6 @@ FOLDERS.each { folderName ->
     }
   }
 
-  freeStyleJob(runIntegrationTestsWithHardware) {
-    parameters {
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of Marvin tests to execute')
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    label(executorLabelMct)
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      maxPerNode(1)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    steps {
-      downstreamParameterized {
-        trigger(runIntegrationTests) {
-          block {
-            buildStepFailure('never')
-            failure('never')
-            unstable('never')
-          }
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            sameNode()
-            gitRevision(false)
-            booleanParam(REQUIRED_HARDWARE_PARAM, true)
-            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
-          }
-        }
-      }
-    }
-    publishers{
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
-  }
-
-  freeStyleJob(runIntegrationTestsWithoutHardware) {
-    parameters {
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITHOUT_HARDWARE) : COSMIC_TESTS_WITHOUT_HARDWARE), 'Set of Marvin tests to execute')
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    label(executorLabelMct)
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      maxPerNode(1)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    steps {
-      downstreamParameterized {
-        trigger(runIntegrationTests) {
-          block {
-            buildStepFailure('never')
-            failure('never')
-            unstable('never')
-          }
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            sameNode()
-            gitRevision(false)
-            booleanParam(REQUIRED_HARDWARE_PARAM, false)
-            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
-          }
-        }
-      }
-    }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
-  }
-
   freeStyleJob(collectArtifactsAndCleanup) {
     label(executorLabelMct)
     concurrentBuild()
@@ -776,105 +661,6 @@ FOLDERS.each { folderName ->
       archiveArtifacts {
         pattern(makePatternList(CLEAN_UP_JOB_ARTIFACTS))
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
-  }
-
-  // generic Maven job that builds on a folder (instead of a git repo)
-  // this job is meant to be called by another job that already checked out a maven project
-  mavenJob(mavenBuild) {
-    parameters {
-      credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
-        type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
-        required()
-        defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
-        description('mccd jenkins OAuth2 token credential')
-      }
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-    }
-    environmentVariables {
-      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    archivingDisabled(true)
-    concurrentBuild(true)
-    goals('clean')
-    goals('install')
-    goals('-Pdeveloper')
-    goals('-Psystemvm')
-    goals('-Psonar-ci-cosmic')
-    goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
-  }
-
-  mavenJob(mavenSonarBuild) {
-    parameters {
-      credentialsParam(SONAR_RUNNER_PASSWORD_PARAM) {
-        type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
-        required()
-        defaultValue(SONAR_RUNNER_PASSOWRD_CREDENTIALS)
-        description('sonar-runner user credentials')
-      }
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-    }
-    environmentVariables {
-      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-      credentialsBinding {
-          usernamePassword('SONAR_RUNNER_USERNAME', 'SONAR_RUNNER_PASSWORD', injectJobVariable(SONAR_RUNNER_PASSWORD_PARAM))
-      }
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    archivingDisabled(true)
-    concurrentBuild(true)
-    goals('sonar:sonar')
-    goals('-Psonar-ci-cosmic')
-    goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")
-    goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
-    goals("-DskipITs")
-    goals("-Dsonar.branch=${isDevFolder ? 'development' : 'production'}-build")
-    publishers {
       if(!isDevFolder) {
         slackNotifications {
           notifyBuildStart()
@@ -1046,7 +832,7 @@ FOLDERS.each { folderName ->
   freeStyleJob(runIntegrationTests) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
+      booleanParam(REQUIRED_HARDWARE_PARAM, true, 'Flag passed to Marvin to select test cases to execute')
       textParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
@@ -1082,19 +868,117 @@ FOLDERS.each { folderName ->
     }
   }
 
+  // generic Maven job that builds on a folder (instead of a git repo)
+  // this job is meant to be called by another job that already checked out a maven project
+  mavenJob(mavenBuild) {
+    parameters {
+      credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
+        type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
+        required()
+        defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
+        description('mccd jenkins OAuth2 token credential')
+      }
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    environmentVariables {
+      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    archivingDisabled(true)
+    concurrentBuild(true)
+    goals('clean')
+    goals('install')
+    goals('-Pdeveloper')
+    goals('-Psystemvm')
+    goals('-Psonar-ci-cosmic')
+    goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
+    }
+  }
+
+  mavenJob(mavenSonarBuild) {
+    parameters {
+      credentialsParam(SONAR_RUNNER_PASSWORD_PARAM) {
+        type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
+        required()
+        defaultValue(SONAR_RUNNER_PASSOWRD_CREDENTIALS)
+        description('sonar-runner user credentials')
+      }
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    environmentVariables {
+      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+      credentialsBinding {
+          usernamePassword('SONAR_RUNNER_USERNAME', 'SONAR_RUNNER_PASSWORD', injectJobVariable(SONAR_RUNNER_PASSWORD_PARAM))
+      }
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    archivingDisabled(true)
+    goals('sonar:sonar')
+    goals('-Psonar-ci-cosmic')
+    goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")
+    goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+    goals("-DskipITs")
+    goals("-Dsonar.branch=${isDevFolder ? 'development' : 'production'}-build")
+    publishers {
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
+    }
+  }
+
+  def counter = 4
   def pluginRepositories = isDevFolder ? getFakeRepos() : getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME);
   // Pull request jobs for plugins
   pluginRepositories.each { cosmicRepo ->
-    def targetBranch = injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM)
+    def targetBranch = injectJobVariable(GIT_REPO_BRANCH_PARAM)
     def repoName = cosmicRepo.getName()
     def githubRepository = "${ORGANIZATION_NAME}/" + repoName
-    def repoJobName =  "${folderName}/plugin-pull-request-build-${repoName}"
+    def repoJobName =  "${folderName}/000${counter++}-plugin-pull-request-build-${repoName}"
 
     // job to build cosmic a plugin
     multiJob(repoJobName) {
-      displayName('Plugin pull request build: ' + repoName)
       parameters {
-        stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, DEFAULT_GIT_REPO_BRANCH, 'Branch to be built')
+        stringParam(GIT_REPO_BRANCH_PARAM, DEFAULT_GIT_REPO_BRANCH, 'Branch to be built')
       }
       concurrentBuild()
       label(DEFAULT_EXECUTOR)
@@ -1114,7 +998,7 @@ FOLDERS.each { folderName ->
             name('origin')
             refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
           }
-          branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
+          branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
           clean(true)
         }
       }

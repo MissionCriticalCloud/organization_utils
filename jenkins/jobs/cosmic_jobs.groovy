@@ -28,6 +28,8 @@ def TESTS_PARAM                      = 'tests'
 
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 
+def GIT_BRANCH_ENV_VARIABLE_NAME = 'GIT_BRANCH'
+
 def DEFAULT_GITHUB_JOB_LABEL = 'mccd jenkins build'
 
 def MCCD_JENKINS_GITHUB_CREDENTIALS       = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
@@ -337,7 +339,7 @@ FOLDERS.each { folderName ->
       downstreamParameterized {
         trigger(trackingRepoBuild) {
           parameters {
-            predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, injectJobVariable('GIT_BRANCH'))
+            predefinedProp(DEFAULT_GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
           }
           block {
             buildStepFailure('UNSTABLE')
@@ -760,7 +762,7 @@ FOLDERS.each { folderName ->
     goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")
     goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
     goals("-DskipITs")
-    goals("-Dsonar.branch=${isDevFolder ? 'development' : 'production'}-build")
+    goals("-Dsonar.branch=${injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME)}-${isDevFolder ? 'development' : ''}-build")
     publishers {
       if(!isDevFolder) {
         slackNotifications {

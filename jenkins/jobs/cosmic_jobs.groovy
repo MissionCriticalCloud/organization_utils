@@ -131,7 +131,6 @@ FOLDERS.each { folderName ->
   def setupInfraForIntegrationTests       = "${folderName}/setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/deploy-datacenter-for-integration-tests"
   def runIntegrationTestsWithHardware     = "${folderName}/run-integration-tests-with-hardware"
-  def runIntegrationTestsWithoutHardware  = "${folderName}/run-integration-tests-without-hardware"
   def collectArtifactsAndCleanup          = "${folderName}/collect-artifacts-and-cleanup"
   def runIntegrationTests                 = "${folderName}/run-integration-tests"
 
@@ -355,6 +354,7 @@ FOLDERS.each { folderName ->
     displayName('Cosmic full build')
     parameters {
       stringParam(DEFAULT_GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
     }
     label(executorLabelMct)
     concurrentBuild()
@@ -426,20 +426,13 @@ FOLDERS.each { folderName ->
       shell("rm -rf /tmp/MarvinLogs/test_*")
       phase('Run integration tests') {
         continuationCondition('ALWAYS')
-        phaseJob(runIntegrationTestsWithHardware) {
+        phaseJob(runIntegrationTests) {
           currentJobParameters(false)
           parameters {
             sameNode()
             gitRevision(false)
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-          }
-        }
-        phaseJob(runIntegrationTestsWithoutHardware) {
-          currentJobParameters(false)
-          parameters {
-            sameNode()
-            gitRevision(false)
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
           }
         }
       }
@@ -633,112 +626,6 @@ FOLDERS.each { folderName ->
         pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
         onlyIfSuccessful()
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
-  }
-
-  freeStyleJob(runIntegrationTestsWithHardware) {
-    parameters {
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of Marvin tests to execute')
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    label(executorLabelMct)
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      maxPerNode(1)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    steps {
-      downstreamParameterized {
-        trigger(runIntegrationTests) {
-          block {
-            buildStepFailure('never')
-            failure('never')
-            unstable('never')
-          }
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            sameNode()
-            gitRevision(false)
-            booleanParam(REQUIRED_HARDWARE_PARAM, true)
-            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
-          }
-        }
-      }
-    }
-    publishers{
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
-  }
-
-  freeStyleJob(runIntegrationTestsWithoutHardware) {
-    parameters {
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITHOUT_HARDWARE) : COSMIC_TESTS_WITHOUT_HARDWARE), 'Set of Marvin tests to execute')
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    label(executorLabelMct)
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      maxPerNode(1)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    steps {
-      downstreamParameterized {
-        trigger(runIntegrationTests) {
-          block {
-            buildStepFailure('never')
-            failure('never')
-            unstable('never')
-          }
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            sameNode()
-            gitRevision(false)
-            booleanParam(REQUIRED_HARDWARE_PARAM, false)
-            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
-          }
-        }
-      }
-    }
-    publishers {
       if(!isDevFolder) {
         slackNotifications {
           notifyBuildStart()
@@ -1046,7 +933,7 @@ FOLDERS.each { folderName ->
   freeStyleJob(runIntegrationTests) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      booleanParam(REQUIRED_HARDWARE_PARAM, false, 'Flag passed to Marvin to select test cases to execute')
+      booleanParam(REQUIRED_HARDWARE_PARAM, true, 'Flag passed to Marvin to select test cases to execute')
       textParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))

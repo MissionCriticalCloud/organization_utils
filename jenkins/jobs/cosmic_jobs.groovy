@@ -949,7 +949,7 @@ FOLDERS.each { folderName ->
     goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")
     goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
     goals("-DskipITs")
-    goals("-Dsonar.branch=${isDevFolder ? 'development' : 'production'}-build")
+    goals("-Dsonar.branch=${injectJobVariable(GIT_REPO_BRANCH_PARAM)}-${isDevFolder ? 'DEV' : ''}-build")
     publishers {
       if(!isDevFolder) {
         slackNotifications {

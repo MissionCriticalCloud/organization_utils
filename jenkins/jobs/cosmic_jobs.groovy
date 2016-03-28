@@ -259,8 +259,11 @@ FOLDERS.each { folderName ->
   }
 
   freeStyleJob(trackingRepoMasterBuild) {
-    label(DEFAULT_EXECUTOR)
+    label(executorLabelMct)
     concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
     logRotator {
       numToKeep(50)
       artifactNumToKeep(10)
@@ -292,6 +295,7 @@ FOLDERS.each { folderName ->
       downstreamParameterized {
         trigger(trackingRepoBuild) {
           parameters {
+            sameNode()
             predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
           }
           block {
@@ -305,8 +309,11 @@ FOLDERS.each { folderName ->
   }
 
   freeStyleJob(trackingRepoBranchBuild) {
-    label(DEFAULT_EXECUTOR)
+    label(executorLabelMct)
     concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
     logRotator {
       numToKeep(50)
       artifactNumToKeep(10)
@@ -337,6 +344,7 @@ FOLDERS.each { folderName ->
       downstreamParameterized {
         trigger(trackingRepoBuild) {
           parameters {
+            sameNode()
             predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
           }
           block {

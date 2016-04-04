@@ -397,14 +397,14 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
         phaseJob(prepareInfraForIntegrationTests) {
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -414,7 +414,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -424,7 +424,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -437,7 +437,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
           }
@@ -450,7 +450,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -460,7 +460,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -551,7 +551,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -605,7 +605,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(true)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -615,7 +615,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -1034,7 +1034,7 @@ FOLDERS.each { folderName ->
             parameters {
               predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
               sameNode()
-              gitRevision(false)
+              gitRevision(true)
             }
           }
         }

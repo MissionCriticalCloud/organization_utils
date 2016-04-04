@@ -634,14 +634,11 @@ FOLDERS.each { folderName ->
       }
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -671,14 +668,11 @@ FOLDERS.each { folderName ->
       }
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -718,14 +712,11 @@ FOLDERS.each { folderName ->
       }
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -749,20 +740,6 @@ FOLDERS.each { folderName ->
     steps {
       shell('rm -rf ./*')
       shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
-    }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -788,20 +765,6 @@ FOLDERS.each { folderName ->
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-setup-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
     }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
   }
 
   freeStyleJob(deployDatacenterForIntegrationTests) {
@@ -820,20 +783,6 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
-    }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -869,8 +818,6 @@ FOLDERS.each { folderName ->
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -961,14 +908,11 @@ FOLDERS.each { folderName ->
     publishers {
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }

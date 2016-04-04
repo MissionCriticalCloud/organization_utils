@@ -397,14 +397,14 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
         phaseJob(prepareInfraForIntegrationTests) {
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -414,7 +414,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -424,7 +424,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -437,7 +437,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
           }
@@ -450,7 +450,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -460,7 +460,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(false)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -551,7 +551,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -605,7 +605,7 @@ FOLDERS.each { folderName ->
           currentJobParameters(true)
           parameters {
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -615,7 +615,7 @@ FOLDERS.each { folderName ->
           parameters {
             predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
             sameNode()
-            gitRevision(false)
+            gitRevision(true)
           }
         }
       }
@@ -634,14 +634,11 @@ FOLDERS.each { folderName ->
       }
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -671,14 +668,11 @@ FOLDERS.each { folderName ->
       }
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -718,14 +712,11 @@ FOLDERS.each { folderName ->
       }
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -749,20 +740,6 @@ FOLDERS.each { folderName ->
     steps {
       shell('rm -rf ./*')
       shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
-    }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -788,20 +765,6 @@ FOLDERS.each { folderName ->
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-setup-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
     }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
   }
 
   freeStyleJob(deployDatacenterForIntegrationTests) {
@@ -820,20 +783,6 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
-    }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -869,8 +818,6 @@ FOLDERS.each { folderName ->
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -961,14 +908,11 @@ FOLDERS.each { folderName ->
     publishers {
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -1034,7 +978,7 @@ FOLDERS.each { folderName ->
             parameters {
               predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
               sameNode()
-              gitRevision(false)
+              gitRevision(true)
             }
           }
         }

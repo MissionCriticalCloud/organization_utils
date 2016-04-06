@@ -1040,13 +1040,12 @@ FOLDERS.each { folderName ->
         }
       }
       publishers {
-        if(repoName != 'cosmic-client') {
-          archiveJunit(makePatternList(MAVEN_REPORTS)) {
-            retainLongStdout(true)
-            testDataPublishers {
-                publishTestStabilityData()
-            }
+        archiveJunit(makePatternList(MAVEN_REPORTS)) {
+          retainLongStdout(true)
+          testDataPublishers {
+              publishTestStabilityData()
           }
+          allowEmptyResults(repoName.matches('cosmic-(client|checkstyle)'))
         }
         if(!isDevFolder) {
           slackNotifications {

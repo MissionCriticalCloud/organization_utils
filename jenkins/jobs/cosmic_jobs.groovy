@@ -905,6 +905,7 @@ FOLDERS.each { folderName ->
     concurrentBuild(true)
     goals('clean')
     goals('install')
+    goals('deploy')
     goals('-Pdeveloper')
     goals('-Psystemvm')
     goals('-Psonar-ci-cosmic')

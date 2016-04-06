@@ -852,6 +852,7 @@ FOLDERS.each { folderName ->
     concurrentBuild(true)
     goals('clean')
     goals('install')
+    goals('deploy')
     goals('-Pdeveloper')
     goals('-Psystemvm')
     goals('-Psonar-ci-cosmic')
@@ -984,13 +985,12 @@ FOLDERS.each { folderName ->
         }
       }
       publishers {
-        if(repoName != 'cosmic-client') {
-          archiveJunit(makePatternList(MAVEN_REPORTS)) {
-            retainLongStdout(true)
-            testDataPublishers {
-                publishTestStabilityData()
-            }
+        archiveJunit(makePatternList(MAVEN_REPORTS)) {
+          retainLongStdout(true)
+          testDataPublishers {
+              publishTestStabilityData()
           }
+          allowEmptyResults(repoName.matches('cosmic-(client|checkstyle)'))
         }
         if(!isDevFolder) {
           slackNotifications {

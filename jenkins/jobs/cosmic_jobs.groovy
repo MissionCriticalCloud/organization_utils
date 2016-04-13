@@ -171,7 +171,10 @@ FOLDERS.each { folderName ->
           }
           branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
           shallowClone(true)
-          clean(true)
+          extensions {
+            cleanAfterCheckout()
+            cleanBeforeCheckout()
+          }
           configure { node ->
             node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
               includedRegions 'jenkins/jobs/cosmic_jobs[.]groovy'
@@ -249,7 +252,10 @@ FOLDERS.each { folderName ->
           }
           branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
           shallowClone(false)
-          clean(true)
+          extensions {
+            cleanAfterCheckout()
+            cleanBeforeCheckout()
+          }
           recursiveSubmodules(true)
           trackingSubmodules(true)
         }
@@ -299,7 +305,10 @@ FOLDERS.each { folderName ->
           refspec('+refs/heads/master')
         }
         branch('master')
-        clean(true)
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+        }
         recursiveSubmodules(true)
         trackingSubmodules(false)
       }
@@ -348,7 +357,10 @@ FOLDERS.each { folderName ->
           name('origin')
         }
         branch('origin/build/**')
-        clean(true)
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+        }
         recursiveSubmodules(true)
         trackingSubmodules(false)
       }
@@ -556,7 +568,10 @@ FOLDERS.each { folderName ->
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
         branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-        clean(true)
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+        }
         recursiveSubmodules(true)
         trackingSubmodules(false)
       }
@@ -693,7 +708,10 @@ FOLDERS.each { folderName ->
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
         branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-        clean(true)
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+        }
         recursiveSubmodules(true)
         trackingSubmodules(true)
       }
@@ -870,7 +888,10 @@ FOLDERS.each { folderName ->
         }
         branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
         shallowClone(true)
-        clean(true)
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+        }
       }
     }
     steps {
@@ -1202,7 +1223,10 @@ FOLDERS.each { folderName ->
             refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
           }
           branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-          clean(true)
+          extensions {
+            cleanAfterCheckout()
+            cleanBeforeCheckout()
+          }
         }
       }
       triggers {

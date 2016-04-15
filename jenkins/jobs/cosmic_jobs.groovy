@@ -143,6 +143,8 @@ FOLDERS.each { folderName ->
   def runIntegrationTests                 = "${folderName}/0500-run-integration-tests"
   def collectArtifactsAndCleanup          = "${folderName}/0600-collect-artifacts-and-cleanup"
   def seedJob                             = "${folderName}/9991-seed-job"
+  def mavenReleaseUpdateDependencies      = "${folderName}/9994-maven-versions-update-dependencies"
+  def mavenPluginRelease                  = "${folderName}/9995-maven-release-buid"
   def mavenVersionsUpdateParent           = "${folderName}/9996-maven-versions-update-parent"
   def mavenRelease                        = "${folderName}/9997-maven-release-buid"
   def mavenBuild                          = "${folderName}/9998-maven-build"
@@ -494,7 +496,7 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Release Cosmic Plugins') {
-        phaseJob(mavenRelease) {
+        phaseJob(mavenPluginRelease) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-kvm")
@@ -504,7 +506,7 @@ FOLDERS.each { folderName ->
             gitRevision(true)
           }
         }
-        phaseJob(mavenRelease) {
+        phaseJob(mavenPluginRelease) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-xenserver")
@@ -514,7 +516,7 @@ FOLDERS.each { folderName ->
             gitRevision(true)
           }
         }
-        phaseJob(mavenRelease) {
+        phaseJob(mavenPluginRelease) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-ovm3")
@@ -526,7 +528,7 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Release Cosmic Client') {
-        phaseJob(mavenRelease) {
+        phaseJob(mavenPluginRelease) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-client")
@@ -1142,6 +1144,82 @@ FOLDERS.each { folderName ->
           showCommitList()
         }
       }
+    }
+  }
+
+  multiJob(mavenPluginRelease) {
+    parameters {
+      credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
+        type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
+        required()
+        defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
+        description('mccd jenkins OAuth2 token credential')
+      }
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+      stringParam(MAVEN_EXTRA_GOALS_PARAM, '', 'Extra goals and config for the job')
+      stringParam(MAVEN_RELEASE_VERSION_PARAM, '', 'The version of the new release (empty means the build number will increment)')
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+      environmentVariables {
+        env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
+        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+      }
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    steps {
+      phase('Update dependencies to release versions') {
+        phaseJob(mavenReleaseUpdateDependencies) {
+          currentJobParameters(true)
+          parameters {
+            sameNode()
+            gitRevision(true)
+          }
+        }
+      }
+      phase('Release plugin') {
+        phaseJob(mavenRelease) {
+          currentJobParameters(true)
+          parameters {
+            sameNode()
+            gitRevision(true)
+          }
+        }
+      }
+    }
+  }
+
+  freeStyleJob(mavenReleaseUpdateDependencies) {
+    parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+      environmentVariables {
+        env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
+        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+      }
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    steps {
+      shell(makeMultiline([
+        'mvn versions:use-releases',
+        'git add pom.xml',
+        'git commit -m "Update dependencies to release versions"',
+        'git clean -xdf'
+      ]))
     }
   }
 

@@ -843,15 +843,6 @@ FOLDERS.each { folderName ->
         pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
         onlyIfSuccessful()
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-        }
-      }
     }
   }
 
@@ -1026,12 +1017,12 @@ FOLDERS.each { folderName ->
     publishers {
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
+          includeTestSummary()
         }
       }
     }
@@ -1074,12 +1065,10 @@ FOLDERS.each { folderName ->
     publishers {
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
-          notifyBackToNormal()
           includeTestSummary()
           showCommitList()
         }
@@ -1150,20 +1139,6 @@ FOLDERS.each { folderName ->
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
       shell("mvn -B release:prepare release:perform -Psystemvm ${injectJobVariable(MAVEN_EXTRA_GOALS_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
-    }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -1276,17 +1251,6 @@ FOLDERS.each { folderName ->
     goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
     goals("-DskipITs")
     goals("-Dsonar.branch=${injectJobVariable(GIT_REPO_BRANCH_PARAM)}-${isDevFolder ? 'DEV-' : ''}build")
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-        }
-      }
-    }
   }
 
   def pluginRepositories = isDevFolder ? getFakeRepos() : getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME);

@@ -28,6 +28,8 @@ def TESTS_PARAM                       = 'tests'
 def MAVEN_EXTRA_GOALS_PARAM           = 'mvnExtraGoals'
 def MAVEN_RELEASE_VERSION_PARAM       = 'releaseVersion'
 
+def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
+
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 def MAVEN_RELEASE_VERSION_ENV_VAR = 'releaseVersion'
 
@@ -279,15 +281,15 @@ FOLDERS.each { folderName ->
     }
   }
 
-  freeStyleJob(trackingRepoMasterBuild) {
+  multiJob(trackingRepoMasterBuild) {
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
-      maxPerNode(1)
+      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
     logRotator {
       numToKeep(50)
-      artifactNumToKeep(10)
+      artifactNumToKeep(20)
     }
     wrappers {
       colorizeOutput('xterm')
@@ -316,31 +318,59 @@ FOLDERS.each { folderName ->
       }
     }
     steps {
-      downstreamParameterized {
-        trigger(trackingRepoBuild) {
+      phase('Full Build') {
+        phaseJob(trackingRepoBuild) {
           parameters {
             sameNode()
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
+            gitRevision(true)
           }
-          block {
-            buildStepFailure('UNSTABLE')
-            failure('FAILURE')
-            unstable('UNSTABLE')
-          }
+        }
+      }
+      copyArtifacts(trackingRepoBuild) {
+        includePatterns(makePatternList(COSMIC_BUILD_ARTEFACTS) + makePatternList(XUNIT_REPORTS))
+        fingerprintArtifacts(true)
+        buildSelector {
+          multiJobBuild()
+        }
+      }
+    }
+    publishers {
+      archiveArtifacts {
+        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
+        onlyIfSuccessful()
+      }
+      archiveJunit(makePatternList(XUNIT_REPORTS)) {
+        retainLongStdout()
+        testDataPublishers {
+            publishTestStabilityData()
+        }
+      }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
         }
       }
     }
   }
 
-  freeStyleJob(trackingRepoBranchBuild) {
+  multiJob(trackingRepoBranchBuild) {
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
-      maxPerNode(1)
+      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
     logRotator {
       numToKeep(50)
-      artifactNumToKeep(10)
+      artifactNumToKeep(20)
     }
     wrappers {
       colorizeOutput('xterm')
@@ -357,6 +387,7 @@ FOLDERS.each { folderName ->
           github(COSMIC_GITHUB_REPOSITORY, 'ssh')
           credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
           name('origin')
+          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
         branch('origin/build/**')
         extensions {
@@ -368,17 +399,45 @@ FOLDERS.each { folderName ->
       }
     }
     steps {
-      downstreamParameterized {
-        trigger(trackingRepoBuild) {
+      phase('Full build') {
+        phaseJob(trackingRepoBuild) {
           parameters {
             sameNode()
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
+            gitRevision(true)
           }
-          block {
-            buildStepFailure('UNSTABLE')
-            failure('FAILURE')
-            unstable('UNSTABLE')
-          }
+        }
+      }
+      copyArtifacts(trackingRepoBuild) {
+        includePatterns(makePatternList(COSMIC_BUILD_ARTEFACTS) + makePatternList(XUNIT_REPORTS))
+        fingerprintArtifacts(true)
+        buildSelector {
+          multiJobBuild()
+        }
+      }
+    }
+    publishers {
+      archiveArtifacts {
+        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
+        onlyIfSuccessful()
+      }
+      archiveJunit(makePatternList(XUNIT_REPORTS)) {
+        retainLongStdout()
+        testDataPublishers {
+            publishTestStabilityData()
+        }
+      }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
         }
       }
     }
@@ -545,9 +604,11 @@ FOLDERS.each { folderName ->
   // Build for a branch of tracking repo
   multiJob(trackingRepoBuild) {
     parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
       stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
       textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
     }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
@@ -560,23 +621,6 @@ FOLDERS.each { folderName ->
     wrappers {
       colorizeOutput('xterm')
       timestamps()
-    }
-    scm {
-      git {
-        remote {
-          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
-          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-          name('origin')
-          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
-        }
-        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-        extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
-        }
-        recursiveSubmodules(true)
-        trackingSubmodules(false)
-      }
     }
     steps {
       phase('Build maven project and prepare infrastructure for integrations tests') {
@@ -657,30 +701,6 @@ FOLDERS.each { folderName ->
         fingerprintArtifacts(true)
         buildSelector {
           multiJobBuild()
-        }
-      }
-    }
-    publishers {
-      archiveArtifacts {
-        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-        onlyIfSuccessful()
-      }
-      archiveJunit(makePatternList(XUNIT_REPORTS)) {
-        retainLongStdout()
-        testDataPublishers {
-            publishTestStabilityData()
-        }
-      }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }

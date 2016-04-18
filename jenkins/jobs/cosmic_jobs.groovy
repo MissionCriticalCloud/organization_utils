@@ -1082,6 +1082,7 @@ FOLDERS.each { folderName ->
     goals('clean')
     goals('install')
     goals('deploy')
+    goals('-U')
     goals('-Pdeveloper')
     goals('-Psystemvm')
     goals('-Psonar-ci-cosmic')

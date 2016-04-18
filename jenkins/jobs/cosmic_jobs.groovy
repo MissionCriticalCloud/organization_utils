@@ -450,7 +450,7 @@ FOLDERS.each { folderName ->
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
-      maxPerNode(1)
+      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
     logRotator {
       numToKeep(50)

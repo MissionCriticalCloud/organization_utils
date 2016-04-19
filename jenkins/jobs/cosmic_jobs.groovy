@@ -470,6 +470,7 @@ FOLDERS.each { folderName ->
         branch('master')
         extensions {
           wipeOutWorkspace()
+          localBranch('master')
         }
         recursiveSubmodules(true)
         trackingSubmodules(false)

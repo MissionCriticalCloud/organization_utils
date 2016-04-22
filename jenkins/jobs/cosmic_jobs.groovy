@@ -32,6 +32,9 @@ def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
 
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 def MAVEN_RELEASE_VERSION_ENV_VAR = 'releaseVersion'
+def MAVEN_OPTIONS_ENV_VAR         = 'MAVEN_OPTS'
+
+def MAVEN_OPTIONS_RELEASE_JOB = '-Xmx2048m -Xms2048m'
 
 def MAVEN_RELEASE_NO_SUBMODULES           = '-N -Darguments=-N'
 def MAVEN_RELEASE_AUTO_VERSION_SUBMODULES = '-DautoVersionSubmodules=true'
@@ -1127,6 +1130,7 @@ FOLDERS.each { folderName ->
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
       shell(makeMultiline([
+        'git checkout master',
         'mvn versions:update-parent -N',
         'git add pom.xml',
         'git commit -m "Update parent to latest release version"',
@@ -1159,12 +1163,12 @@ FOLDERS.each { folderName ->
       timestamps()
       environmentVariables {
         env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+        env(MAVEN_OPTIONS_ENV_VAR, MAVEN_OPTIONS_RELEASE_JOB)
       }
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
-      shell("mvn -B release:prepare release:perform -Psystemvm ${injectJobVariable(MAVEN_EXTRA_GOALS_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
+      shell("mvn -B release:prepare release:perform -Psystemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${injectJobVariable(MAVEN_EXTRA_GOALS_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
     }
   }
 
@@ -1236,10 +1240,15 @@ FOLDERS.each { folderName ->
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
       shell(makeMultiline([
-        'mvn versions:use-releases',
-        'git add pom.xml',
-        'git commit -m "Update dependencies to release versions"',
-        'git clean -xdf'
+        'mvn versions:force-releases',
+        'if [ -z "$(git status -su)" ]; then',
+        '  echo "==> No dependencies changed"',
+        'else',
+        '  echo "==> Committing dependency chages"',
+        '  git add pom.xml',
+        '  git commit -m "Update dependencies to release versions"',
+        '  git clean -xdf',
+        'fi'
       ]))
     }
   }

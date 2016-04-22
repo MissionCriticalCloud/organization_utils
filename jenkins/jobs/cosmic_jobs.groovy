@@ -1168,7 +1168,7 @@ FOLDERS.each { folderName ->
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
-      shell("mvn -B release:prepare release:perform -Psystemvm ${injectJobVariable(MAVEN_EXTRA_GOALS_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
+      shell("mvn -B release:prepare release:perform -Psystemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${injectJobVariable(MAVEN_EXTRA_GOALS_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
     }
   }
 

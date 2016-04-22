@@ -1240,10 +1240,15 @@ FOLDERS.each { folderName ->
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
       shell(makeMultiline([
-        'mvn versions:use-releases',
-        'git add pom.xml',
-        'git commit -m "Update dependencies to release versions"',
-        'git clean -xdf'
+        'mvn versions:force-releases',
+        'if [ -z "$(git status -su)" ]; then',
+        '  echo "==> No dependencies changed"',
+        'else',
+        '  echo "==> Committing dependency chages"',
+        '  git add pom.xml',
+        '  git commit -m "Update dependencies to release versions"',
+        '  git clean -xdf',
+        'fi'
       ]))
     }
   }

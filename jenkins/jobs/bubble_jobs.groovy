@@ -92,6 +92,7 @@ freeStyleJob(TRACKING_REPO_UPDATE_JOB) {
     shell(makeMultiline([
       "git config --global user.email \"int-mccd_jenkins@schubergphilis.com\"",
       "git config --global user.name \"mccd-jenkins\"",
+      "export LANG=en_US.UTF-8",
       "if [ -z \"\$(git status -su)\" ]; then",
       "  echo \"==> No submodule changed\"",
       "else",

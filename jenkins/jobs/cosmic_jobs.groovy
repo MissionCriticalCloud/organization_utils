@@ -32,6 +32,9 @@ def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
 
 def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 def MAVEN_RELEASE_VERSION_ENV_VAR = 'releaseVersion'
+def MAVEN_OPTIONS_ENV_VAR         = 'MAVEN_OPTS'
+
+def MAVEN_OPTIONS_RELEASE_JOB = '-Xmx2048m -Xms2048m'
 
 def MAVEN_RELEASE_NO_SUBMODULES           = '-N -Darguments=-N'
 def MAVEN_RELEASE_AUTO_VERSION_SUBMODULES = '-DautoVersionSubmodules=true'
@@ -1159,7 +1162,7 @@ FOLDERS.each { folderName ->
       timestamps()
       environmentVariables {
         env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+        env(MAVEN_OPTIONS_ENV_VAR, MAVEN_OPTIONS_RELEASE_JOB)
       }
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))

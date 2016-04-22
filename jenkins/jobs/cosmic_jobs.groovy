@@ -1130,6 +1130,7 @@ FOLDERS.each { folderName ->
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
       shell(makeMultiline([
+        'git checkout master',
         'mvn versions:update-parent -N',
         'git add pom.xml',
         'git commit -m "Update parent to latest release version"',

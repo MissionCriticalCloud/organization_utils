@@ -262,6 +262,7 @@ FOLDERS.each { folderName ->
           extensions {
             cleanAfterCheckout()
             cleanBeforeCheckout()
+            wipeOutWorkspace()
           }
           recursiveSubmodules(true)
           trackingSubmodules(true)
@@ -315,6 +316,7 @@ FOLDERS.each { folderName ->
         extensions {
           cleanAfterCheckout()
           cleanBeforeCheckout()
+          wipeOutWorkspace()
         }
         recursiveSubmodules(true)
         trackingSubmodules(false)
@@ -396,6 +398,7 @@ FOLDERS.each { folderName ->
         extensions {
           cleanAfterCheckout()
           cleanBeforeCheckout()
+          wipeOutWorkspace()
         }
         recursiveSubmodules(true)
         trackingSubmodules(false)
@@ -761,6 +764,7 @@ FOLDERS.each { folderName ->
         extensions {
           cleanAfterCheckout()
           cleanBeforeCheckout()
+          wipeOutWorkspace()
         }
         recursiveSubmodules(true)
         trackingSubmodules(true)

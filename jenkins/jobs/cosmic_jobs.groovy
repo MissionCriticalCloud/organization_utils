@@ -131,29 +131,30 @@ def FOLDERS = [
 ]
 
 FOLDERS.each { folderName ->
-  def trackingRepoUpdate                  = "${folderName}/0000-tracking-repo-update"
-  def trackingRepoMasterBuild             = "${folderName}/0001-tracking-repo-master-build"
-  def trackingRepoBranchBuild             = "${folderName}/0002-tracking-repo-branch-build"
-  def trackingRepoPullRequestBuild        = "${folderName}/0003-tracking-repo-pull-request-build"
-  def trackingRepoReleaseBuild            = "${folderName}/0004-tracking-repo-release-build"
+  def trackingRepoUpdate                              = "${folderName}/0000-tracking-repo-update"
+  def trackingRepoMasterBuild                         = "${folderName}/0001-tracking-repo-master-build"
+  def trackingRepoBranchBuild                         = "${folderName}/0002-tracking-repo-branch-build"
+  def trackingRepoPullRequestBuild                    = "${folderName}/0003-tracking-repo-pull-request-build"
+  def trackingRepoReleaseBuild                        = "${folderName}/0004-tracking-repo-release-build"
 
   def job_name_counter = 5 // this will be used to index plugin pr jobs, it should follow from the last number in the above line
 
-  def trackingRepoBuild                   = "${folderName}/0020-tracking-repo-build"
-  def trackingRepoBuildAndPackageJob      = "${folderName}/0100-tracking-repo-build-and-package"
-  def packageCosmicJob                    = "${folderName}/1000-rpm-package"
-  def prepareInfraForIntegrationTests     = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
-  def setupInfraForIntegrationTests       = "${folderName}/0300-setup-infrastructure-for-integration-tests"
-  def deployDatacenterForIntegrationTests = "${folderName}/0400-deploy-datacenter-for-integration-tests"
-  def runIntegrationTests                 = "${folderName}/0500-run-integration-tests"
-  def collectArtifactsAndCleanup          = "${folderName}/0600-collect-artifacts-and-cleanup"
-  def seedJob                             = "${folderName}/9991-seed-job"
-  def mavenReleaseUpdateDependencies      = "${folderName}/9994-maven-versions-update-dependencies"
-  def mavenPluginRelease                  = "${folderName}/9995-maven-release-buid"
-  def mavenVersionsUpdateParent           = "${folderName}/9996-maven-versions-update-parent"
-  def mavenRelease                        = "${folderName}/9997-maven-release-buid"
-  def mavenBuild                          = "${folderName}/9998-maven-build"
-  def mavenSonarBuild                     = "${folderName}/9999-maven-sonar-buid"
+  def trackingRepoBuild                               = "${folderName}/0020-tracking-repo-build"
+  def trackingRepoBuildAndPackageJob                  = "${folderName}/0100-tracking-repo-build-and-package"
+  def packageCosmicJob                                = "${folderName}/1000-rpm-package"
+  def prepareInfraForIntegrationTests                 = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
+  def setupInfraForIntegrationTests                   = "${folderName}/0300-setup-infrastructure-for-integration-tests"
+  def deployDatacenterForIntegrationTests             = "${folderName}/0400-deploy-datacenter-for-integration-tests"
+  def runIntegrationTests                             = "${folderName}/0500-run-integration-tests"
+  def collectArtifactsAndCleanup                      = "${folderName}/0600-collect-artifacts-and-cleanup"
+  def seedJob                                         = "${folderName}/9991-seed-job"
+  def mavenReleaseUpdateDependenciesToNextSnapshot    = "${folderName}/9994-maven-versions-update-dependencies-next-snapshot"
+  def mavenReleaseUpdateDependenciesToReleaseVersions = "${folderName}/9994-maven-versions-update-dependencies-release-version"
+  def mavenPluginRelease                              = "${folderName}/9995-maven-release-buid"
+  def mavenVersionsUpdateParent                       = "${folderName}/9996-maven-versions-update-parent"
+  def mavenRelease                                    = "${folderName}/9997-maven-release-buid"
+  def mavenBuild                                      = "${folderName}/9998-maven-build"
+  def mavenSonarBuild                                 = "${folderName}/9999-maven-sonar-buid"
 
   def isDevFolder = folderName.endsWith('-dev')
   def shellPrefix = isDevFolder ? 'bash -x' : ''
@@ -605,28 +606,57 @@ FOLDERS.each { folderName ->
           }
         }
       }
-    }
-    publishers {
-      archiveArtifacts {
-        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-        onlyIfSuccessful()
-      }
-      archiveJunit(makePatternList(XUNIT_REPORTS)) {
-        retainLongStdout()
-        testDataPublishers {
-            publishTestStabilityData()
+      phase('Update dependencies in submodules') {
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-core")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-client")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-ovm3")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-kvm")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-xenserver")
+            sameNode()
+            gitRevision(true)
+          }
         }
       }
+    }
+    publishers {
       if(!isDevFolder) {
         slackNotifications {
-          notifyBuildStart()
           notifyAborted()
           notifyFailure()
           notifyNotBuilt()
           notifyUnstable()
           notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -1204,7 +1234,7 @@ FOLDERS.each { folderName ->
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
     steps {
       phase('Update dependencies to release versions') {
-        phaseJob(mavenReleaseUpdateDependencies) {
+        phaseJob(mavenReleaseUpdateDependenciesToReleaseVersions) {
           currentJobParameters(true)
           parameters {
             sameNode()
@@ -1224,7 +1254,7 @@ FOLDERS.each { folderName ->
     }
   }
 
-  freeStyleJob(mavenReleaseUpdateDependencies) {
+  freeStyleJob(mavenReleaseUpdateDependenciesToReleaseVersions) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
@@ -1252,6 +1282,40 @@ FOLDERS.each { folderName ->
         '  git add pom.xml',
         '  git commit -m "Update dependencies to release versions"',
         '  git clean -xdf',
+        'fi'
+      ]))
+    }
+  }
+
+  freeStyleJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+    parameters {
+      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    concurrentBuild()
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+      environmentVariables {
+        env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
+        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+      }
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    steps {
+      shell(makeMultiline([
+        'mvn versions:update-parent versions:use-next-snapshots -Dinclude="cloud.cosmic.**" -DallowMinorUpdates -DallowSnapshots',
+        'if [ -z "$(git status -su)" ]; then',
+        '  echo "==> No dependencies changed"',
+        'else',
+        '  echo "==> Committing dependency chages"',
+        '  git add pom.xml',
+        '  git commit -m "Update parent and dependencies to next snapshot versions"',
+        '  git clean -xdf',
+        '  git push origin master',
         'fi'
       ]))
     }

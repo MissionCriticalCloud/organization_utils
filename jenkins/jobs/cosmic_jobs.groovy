@@ -324,20 +324,6 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      copyArtifacts(trackingRepoBuild) {
-        includePatterns(makePatternList(COSMIC_BUILD_ARTEFACTS) + makePatternList(XUNIT_REPORTS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
-        }
-      }
-      copyArtifacts(deployDatacenterForIntegrationTests) {
-        includePatterns(makePatternList(MARVIN_DEPLOY_DC_LOGS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
-        }
-      }
     }
     publishers {
       archiveArtifacts {
@@ -411,20 +397,6 @@ FOLDERS.each { folderName ->
             predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
             gitRevision(true)
           }
-        }
-      }
-      copyArtifacts(trackingRepoBuild) {
-        includePatterns(makePatternList(COSMIC_BUILD_ARTEFACTS) + makePatternList(XUNIT_REPORTS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
-        }
-      }
-      copyArtifacts(deployDatacenterForIntegrationTests) {
-        includePatterns(makePatternList(MARVIN_DEPLOY_DC_LOGS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
         }
       }
     }
@@ -715,6 +687,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell('rm -rf MarvinLogs')
       phase('Deploy datacenter') {
         phaseJob(deployDatacenterForIntegrationTests) {
           currentJobParameters(false)
@@ -724,7 +697,13 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      shell('rm -rf MarvinLogs')
+      copyArtifacts(deployDatacenterForIntegrationTests) {
+        includePatterns(makePatternList(MARVIN_DEPLOY_DC_LOGS))
+        fingerprintArtifacts(true)
+        buildSelector {
+          multiJobBuild()
+        }
+      }
       phase('Run integration tests') {
         continuationCondition('ALWAYS')
         phaseJob(runIntegrationTests) {
@@ -737,7 +716,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      shell('mkdir MarvinLogs')
+      shell('mkdir -p MarvinLogs')
       shell('mv cosmic-core/test/integration/runinfo.txt MarvinLogs/tests_runinfo.txt')
       shell('mv cosmic-core/test/integration/failed_plus_exceptions.txt MarvinLogs/tests_failed_plus_exceptions.txt')
       shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh")
@@ -1052,9 +1031,10 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
-      shell('rm -rf MarvinLogs')
+      shell('rm -rf *')
       shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
       shell('mkdir MarvinLogs')
+      shell('mv dc_entries_*.obj MarvinLogs/')
       shell('mv runinfo.txt MarvinLogs/deployDc_runinfo.txt')
       shell('mv failed_plus_exceptions.txt MarvinLogs/deployDc_failed_plus_exceptions.txt')
     }

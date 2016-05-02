@@ -138,7 +138,7 @@ FOLDERS.each { folderName ->
   def runIntegrationTests                             = "${folderName}/0500-run-integration-tests"
   def collectArtifactsAndCleanup                      = "${folderName}/0600-collect-artifacts-and-cleanup"
   def seedJob                                         = "${folderName}/9991-seed-job"
-  def mavenReleaseUpdateDependenciesToNextSnapshot    = "${folderName}/9994-maven-versions-update-dependencies-next-snapshot"
+  def mavenReleaseUpdateDependenciesToNextSnapshot    = "${folderName}/9993-maven-versions-update-dependencies-next-snapshot"
   def mavenReleaseUpdateDependenciesToReleaseVersions = "${folderName}/9994-maven-versions-update-dependencies-release-version"
   def mavenPluginRelease                              = "${folderName}/9995-maven-release-buid"
   def mavenVersionsUpdateParent                       = "${folderName}/9996-maven-versions-update-parent"

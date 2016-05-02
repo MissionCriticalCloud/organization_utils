@@ -51,8 +51,7 @@ def SONAR_RUNNER_PASSOWRD_CREDENTIALS     = 'df77a17c-5613-4fdf-8c49-52789b613e5
 def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-kvm1-kvm2.cfg'
 
 def MAVEN_REPORTS = [
-  '**/target/surefire-reports/*.xml',
-  '**/target/failsafe-reports/*.xml'
+  '**/target/surefire-reports/*.xml'
 ]
 
 def MARVIN_REPORTS = [
@@ -72,9 +71,8 @@ def COSMIC_PACKAGING_ARTEFACTS = [
 ]
 
 def COSMIC_TEST_ARTEFACTS = [
-  'nosetests-required_hardware*',
   'MarvinLogs/'
-]
+] + MARVIN_REPORTS
 
 def CLEAN_UP_JOB_ARTIFACTS = [
   'cs1-management-logs/',
@@ -83,10 +81,7 @@ def CLEAN_UP_JOB_ARTIFACTS = [
 ]
 
 def COSMIC_BUILD_ARTEFACTS = [
-  'cosmic-client/copy-from-cosmic-core/db/db/',
-  'cosmic-client/copy-from-cosmic-core/db/create-*.sql',
-  'cosmic-client/copy-from-cosmic-core/db/templates*.sql',
-  'cosmic-client/copy-from-cosmic-core/scripts/storage/secondary/',
+  'cosmic-client/target/setup/',
   'cosmic-client/target/cloud-client-ui-*.war',
   'cosmic-client/target/conf/',
   'cosmic-client/target/pythonlibs/',
@@ -113,17 +108,6 @@ def COSMIC_TESTS_WITH_HARDWARE = [
   'smoke/test_vpc_vpn.py',
   'smoke/test_privategw_acl.py',
   'smoke/test_network.py'
-]
-
-def COSMIC_TESTS_WITHOUT_HARDWARE = [
-  'smoke/test_routers.py',
-  'smoke/test_network_acl.py',
-  'smoke/test_reset_vm_on_reboot.py',
-  'smoke/test_vm_life_cycle.py',
-  'smoke/test_service_offerings.py',
-  'smoke/test_network.py',
-  'component/test_vpc_offerings.py',
-  'component/test_vpc_routers.py'
 ]
 
 def DEFAULT_EXECUTOR     = 'executor'

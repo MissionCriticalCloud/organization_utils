@@ -51,12 +51,17 @@ def SONAR_RUNNER_PASSOWRD_CREDENTIALS     = 'df77a17c-5613-4fdf-8c49-52789b613e5
 def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-kvm1-kvm2.cfg'
 
 def MAVEN_REPORTS = [
-  '**/target/surefire-reports/*.xml',
-  '**/target/failsafe-reports/*.xml'
+  '**/target/surefire-reports/*.xml'
 ]
 
 def MARVIN_REPORTS = [
   'nosetests-required_hardware*'
+]
+
+def MARVIN_DEPLOY_DC_LOGS = [
+  'MarvinLogs/dc_entries_*.obj',
+  'MarvinLogs/deployDc_failed_plus_exceptions.txt',
+  'MarvinLogs/deployDc_runinfo.txt'
 ]
 
 def XUNIT_REPORTS = MARVIN_REPORTS + MAVEN_REPORTS
@@ -66,9 +71,8 @@ def COSMIC_PACKAGING_ARTEFACTS = [
 ]
 
 def COSMIC_TEST_ARTEFACTS = [
-  'nosetests-required_hardware*',
   'MarvinLogs/'
-]
+] + MARVIN_REPORTS
 
 def CLEAN_UP_JOB_ARTIFACTS = [
   'cs1-management-logs/',
@@ -77,10 +81,7 @@ def CLEAN_UP_JOB_ARTIFACTS = [
 ]
 
 def COSMIC_BUILD_ARTEFACTS = [
-  'cosmic-client/copy-from-cosmic-core/db/db/',
-  'cosmic-client/copy-from-cosmic-core/db/create-*.sql',
-  'cosmic-client/copy-from-cosmic-core/db/templates*.sql',
-  'cosmic-client/copy-from-cosmic-core/scripts/storage/secondary/',
+  'cosmic-client/target/setup/',
   'cosmic-client/target/cloud-client-ui-*.war',
   'cosmic-client/target/conf/',
   'cosmic-client/target/pythonlibs/',
@@ -95,9 +96,10 @@ def COSMIC_BUILD_ARTEFACTS = [
 ] + COSMIC_PACKAGING_ARTEFACTS + COSMIC_TEST_ARTEFACTS + CLEAN_UP_JOB_ARTIFACTS
 
 def COSMIC_TESTS_WITH_HARDWARE = [
+  'smoke/test_network.py',
+  'smoke/test_routers_iptables_default_policy.py',
   'smoke/test_password_server.py',
   'smoke/test_vpc_redundant.py',
-  'smoke/test_routers_iptables_default_policy.py',
   'smoke/test_routers_network_ops.py',
   'smoke/test_vpc_router_nics.py',
   'smoke/test_router_dhcphosts.py',
@@ -105,19 +107,7 @@ def COSMIC_TESTS_WITH_HARDWARE = [
   'smoke/test_internal_lb.py',
   'smoke/test_ssvm.py',
   'smoke/test_vpc_vpn.py',
-  'smoke/test_privategw_acl.py',
-  'smoke/test_network.py'
-]
-
-def COSMIC_TESTS_WITHOUT_HARDWARE = [
-  'smoke/test_routers.py',
-  'smoke/test_network_acl.py',
-  'smoke/test_reset_vm_on_reboot.py',
-  'smoke/test_vm_life_cycle.py',
-  'smoke/test_service_offerings.py',
-  'smoke/test_network.py',
-  'component/test_vpc_offerings.py',
-  'component/test_vpc_routers.py'
+  'smoke/test_privategw_acl.py'
 ]
 
 def DEFAULT_EXECUTOR     = 'executor'
@@ -334,13 +324,6 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      copyArtifacts(trackingRepoBuild) {
-        includePatterns(makePatternList(COSMIC_BUILD_ARTEFACTS) + makePatternList(XUNIT_REPORTS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
-        }
-      }
     }
     publishers {
       archiveArtifacts {
@@ -414,13 +397,6 @@ FOLDERS.each { folderName ->
             predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
             gitRevision(true)
           }
-        }
-      }
-      copyArtifacts(trackingRepoBuild) {
-        includePatterns(makePatternList(COSMIC_BUILD_ARTEFACTS) + makePatternList(XUNIT_REPORTS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
         }
       }
     }
@@ -711,7 +687,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      shell('rm -rf /tmp/MarvinLogs/DeployDataCenter_*')
+      shell('rm -rf MarvinLogs')
       phase('Deploy datacenter') {
         phaseJob(deployDatacenterForIntegrationTests) {
           currentJobParameters(false)
@@ -721,9 +697,13 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      shell("mkdir -p MarvinLogs")
-      shell('cp -rf /tmp/MarvinLogs/DeployDataCenter_* MarvinLogs/')
-      shell("rm -rf /tmp/MarvinLogs/test_*")
+      copyArtifacts(deployDatacenterForIntegrationTests) {
+        includePatterns(makePatternList(MARVIN_DEPLOY_DC_LOGS))
+        fingerprintArtifacts(true)
+        buildSelector {
+          multiJobBuild()
+        }
+      }
       phase('Run integration tests') {
         continuationCondition('ALWAYS')
         phaseJob(runIntegrationTests) {
@@ -736,6 +716,9 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell('mkdir -p MarvinLogs')
+      shell('mv cosmic-core/test/integration/runinfo.txt MarvinLogs/tests_runinfo.txt')
+      shell('mv cosmic-core/test/integration/failed_plus_exceptions.txt MarvinLogs/tests_failed_plus_exceptions.txt')
       shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh")
       phase('Sonar analysis') {
         phaseJob(mavenSonarBuild) {
@@ -747,7 +730,6 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      shell("cp -rf /tmp/MarvinLogs/test_* MarvinLogs/")
       phase('Report, Archive and Cleanup') {
         phaseJob(collectArtifactsAndCleanup) {
           currentJobParameters(false)
@@ -1049,7 +1031,18 @@ FOLDERS.each { folderName ->
       timestamps()
     }
     steps {
+      shell('rm -rf *')
       shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+      shell('mkdir MarvinLogs')
+      shell('mv dc_entries_*.obj MarvinLogs/')
+      shell('mv runinfo.txt MarvinLogs/deployDc_runinfo.txt')
+      shell('mv failed_plus_exceptions.txt MarvinLogs/deployDc_failed_plus_exceptions.txt')
+    }
+    publishers {
+      archiveArtifacts {
+        pattern(makePatternList(MARVIN_DEPLOY_DC_LOGS))
+        onlyIfSuccessful(false)
+      }
     }
   }
 

@@ -1268,7 +1268,7 @@ FOLDERS.each { folderName ->
     steps {
       shell(makeMultiline([
         'mvn versions:force-releases',
-        'if [ -z "$(git status -su)" ]; then',
+        'if [ -z "$(git status -su -- pom.xml)" ]; then',
         '  echo "==> No dependencies changed"',
         'else',
         '  echo "==> Committing dependency chages"',

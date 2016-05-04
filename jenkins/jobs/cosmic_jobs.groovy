@@ -582,6 +582,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      shell('mvn deploy -N') // this will push the new parent snapshot to nexus so it can be updated in the submodules
       phase('Update dependencies in submodules') {
         phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
           currentJobParameters(true)

@@ -89,7 +89,6 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-core/developer/developer-prefill.sql',
   'cosmic-core/test/integration/',
   'cosmic-core/**/target/*.jar',
-  'cosmic-core/tools/marvin/dist/Marvin-*.tar.gz',
   'cosmic-plugin-hypervisor-kvm/target/*.jar',
   'cosmic-plugin-hypervisor-ovm3/target/*.jar',
   'cosmic-plugin-hypervisor-xenserver/target/*.jar'

@@ -630,7 +630,7 @@ freeStyleJob(COMMIT_API_CHANGES_JOB) {
                 '  echo "==> No API changes"',
                 'else',
                 '  echo "==> Committing API changes in remote repository"',
-                '  git add --all',
+                '  git add marvin/cloudstackAPI',
                 '  git commit -m "Update all API files"',
                 '  git push origin HEAD:master',
                 'fi'

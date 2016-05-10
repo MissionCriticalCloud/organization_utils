@@ -616,6 +616,15 @@ FOLDERS.each { folderName ->
           }
         }
       }
+      phase('Build maven project') {
+        phaseJob(mavenBuild) {
+          currentJobParameters(true)
+          parameters {
+            sameNode()
+            gitRevision(true)
+          }
+        }
+      }
     }
     publishers {
       if(!isDevFolder) {

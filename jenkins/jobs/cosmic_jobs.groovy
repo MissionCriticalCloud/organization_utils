@@ -429,6 +429,10 @@ FOLDERS.each { folderName ->
     parameters {
       stringParam(MAVEN_RELEASE_VERSION_PARAM, '', 'Custom release version (default is empty)')
     }
+    blockOn(trackingRepoMasterBuild){
+      blockLevel('GLOBAL')
+      scanQueueFor('ALL')
+    }
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {

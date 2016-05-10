@@ -139,9 +139,9 @@ FOLDERS.each { folderName ->
   def seedJob                                         = "${folderName}/9991-seed-job"
   def mavenReleaseUpdateDependenciesToNextSnapshot    = "${folderName}/9993-maven-versions-update-dependencies-next-snapshot"
   def mavenReleaseUpdateDependenciesToReleaseVersions = "${folderName}/9994-maven-versions-update-dependencies-release-version"
-  def mavenPluginRelease                              = "${folderName}/9995-maven-release-buid"
+  def mavenPluginRelease                              = "${folderName}/9995-maven-release-build"
   def mavenVersionsUpdateParent                       = "${folderName}/9996-maven-versions-update-parent"
-  def mavenRelease                                    = "${folderName}/9997-maven-release-buid"
+  def mavenRelease                                    = "${folderName}/9997-maven-release-build"
   def mavenBuild                                      = "${folderName}/9998-maven-build"
   def mavenSonarBuild                                 = "${folderName}/9999-maven-sonar-buid"
 
@@ -429,6 +429,10 @@ FOLDERS.each { folderName ->
     parameters {
       stringParam(MAVEN_RELEASE_VERSION_PARAM, '', 'Custom release version (default is empty)')
     }
+    blockOn(trackingRepoMasterBuild){
+      blockLevel('GLOBAL')
+      scanQueueFor('ALL')
+    }
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
@@ -459,18 +463,6 @@ FOLDERS.each { folderName ->
       }
     }
     steps {
-      if(!isDevFolder) {
-        phase('Full build') {
-          phaseJob(trackingRepoBuild) {
-            currentJobParameters(true)
-            parameters {
-              predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-              sameNode()
-              gitRevision(true)
-            }
-          }
-        }
-      }
       phase('Release Cosmic') {
         phaseJob(mavenRelease) {
           currentJobParameters(true)
@@ -637,6 +629,15 @@ FOLDERS.each { folderName ->
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-xenserver")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+      }
+      phase('Build maven project') {
+        phaseJob(mavenBuild) {
+          currentJobParameters(true)
+          parameters {
             sameNode()
             gitRevision(true)
           }

@@ -503,6 +503,14 @@ FOLDERS.each { folderName ->
         phaseJob(mavenVersionsUpdateParent) {
           currentJobParameters(true)
           parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-event-bus-rabbitmq")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenVersionsUpdateParent) {
+          currentJobParameters(true)
+          parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-kvm")
             sameNode()
             gitRevision(true)
@@ -538,6 +546,16 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Release Cosmic Plugins') {
+        phaseJob(mavenPluginRelease) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-event-bus-rabbitmq")
+            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
+            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+            sameNode()
+            gitRevision(true)
+          }
+        }
         phaseJob(mavenPluginRelease) {
           currentJobParameters(true)
           parameters {

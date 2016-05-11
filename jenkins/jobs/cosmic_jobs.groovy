@@ -475,7 +475,7 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      phase('Update Parent in Submodules Cosmic Core') {
+      phase('Update Parent in Submodules') {
         phaseJob(mavenVersionsUpdateParent) {
           currentJobParameters(true)
           parameters {
@@ -511,6 +511,14 @@ FOLDERS.each { folderName ->
         phaseJob(mavenVersionsUpdateParent) {
           currentJobParameters(true)
           parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-ovm3")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenVersionsUpdateParent) {
+          currentJobParameters(true)
+          parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-xenserver")
             sameNode()
             gitRevision(true)
@@ -519,7 +527,7 @@ FOLDERS.each { folderName ->
         phaseJob(mavenVersionsUpdateParent) {
           currentJobParameters(true)
           parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-ovm3")
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
             sameNode()
             gitRevision(true)
           }
@@ -578,6 +586,16 @@ FOLDERS.each { folderName ->
             gitRevision(true)
           }
         }
+        phaseJob(mavenPluginRelease) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
+            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
+            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+            sameNode()
+            gitRevision(true)
+          }
+        }
       }
       phase('Release Cosmic Client') {
         phaseJob(mavenPluginRelease) {
@@ -592,7 +610,7 @@ FOLDERS.each { folderName ->
         }
       }
       shell('mvn deploy -N') // this will push the new parent snapshot to nexus so it can be updated in the submodules
-      phase('Update dependencies in submodules') {
+      phase('Update dependencies in Cosmic Core') {
         phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
           currentJobParameters(true)
           parameters {
@@ -601,10 +619,12 @@ FOLDERS.each { folderName ->
             gitRevision(true)
           }
         }
+      }
+      phase('Update dependencies in submodules') {
         phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
           currentJobParameters(true)
           parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-client")
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-event-bus-rabbitmq")
             sameNode()
             gitRevision(true)
           }
@@ -633,11 +653,20 @@ FOLDERS.each { folderName ->
             gitRevision(true)
           }
         }
-      }
-      phase('Build maven project') {
-        phaseJob(mavenBuild) {
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
           currentJobParameters(true)
           parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+      }
+      phase('Update dependencies in Cosmic Client') {
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-client")
             sameNode()
             gitRevision(true)
           }
@@ -1290,7 +1319,7 @@ FOLDERS.each { folderName ->
         'if [ -z "$(git status -su -- pom.xml)" ]; then',
         '  echo "==> No dependencies changed"',
         'else',
-        '  echo "==> Committing dependency chages"',
+        '  echo "==> Committing dependency changes"',
         '  git add pom.xml',
         '  git commit -m "Update dependencies to release versions"',
         '  git clean -xdf',
@@ -1323,12 +1352,14 @@ FOLDERS.each { folderName ->
         'if [ -z "$(git status -su)" ]; then',
         '  echo "==> No dependencies changed"',
         'else',
-        '  echo "==> Committing dependency chages"',
+        '  echo "==> Committing dependency changes"',
         '  git add pom.xml',
         '  git commit -m "Update parent and dependencies to next snapshot versions"',
         '  git clean -xdf',
         '  git push origin master',
-        'fi'
+        'fi',
+        // Deploy so the dependent modules can fetch the latest snapshot.
+        'mvn deploy -Pdeveloper -Psystemvm'
       ]))
     }
   }

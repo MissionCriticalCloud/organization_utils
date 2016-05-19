@@ -532,6 +532,14 @@ FOLDERS.each { folderName ->
             gitRevision(true)
           }
         }
+        phaseJob(mavenVersionsUpdateParent) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-sha256")
+            sameNode()
+            gitRevision(true)
+          }
+        }
       }
       phase('Release Cosmic Core') {
         phaseJob(mavenRelease) {
@@ -590,6 +598,16 @@ FOLDERS.each { folderName ->
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
+            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
+            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenPluginRelease) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-sha256")
             predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
             predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
             sameNode()
@@ -657,6 +675,14 @@ FOLDERS.each { folderName ->
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-sha256")
             sameNode()
             gitRevision(true)
           }

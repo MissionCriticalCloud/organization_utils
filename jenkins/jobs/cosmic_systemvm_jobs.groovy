@@ -86,11 +86,16 @@ freeStyleJob(PACKER_BUILD_JOB) {
       }
       branch(injectJobVariable(DEFAULT_GIT_REPO_BRANCH_PARAM))
       shallowClone(false)
-      clean(true)
+      extensions {
+        cleanAfterCheckout()
+        cleanBeforeCheckout()
+        wipeOutWorkspace()
+      }
     }
   }
   steps {
     shell('bash -x build.sh')
+    shell('cd packer_output; md5sum * > md5.txt')
   }
   publishers {
     archiveArtifacts {

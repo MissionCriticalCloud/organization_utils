@@ -479,6 +479,14 @@ FOLDERS.each { folderName ->
         phaseJob(mavenVersionsUpdateParent) {
           currentJobParameters(true)
           parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-agent")
+            sameNode()
+            gitRevision(true)
+          }
+        }
+        phaseJob(mavenVersionsUpdateParent) {
+          currentJobParameters(true)
+          parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-core")
             sameNode()
             gitRevision(true)
@@ -554,6 +562,16 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Release Cosmic Plugins') {
+        phaseJob(mavenPluginRelease) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-agent")
+            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
+            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+            sameNode()
+            gitRevision(true)
+          }
+        }
         phaseJob(mavenPluginRelease) {
           currentJobParameters(true)
           parameters {
@@ -639,6 +657,14 @@ FOLDERS.each { folderName ->
         }
       }
       phase('Update dependencies in submodules') {
+        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
+          currentJobParameters(true)
+          parameters {
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-agent")
+            sameNode()
+            gitRevision(true)
+          }
+        }
         phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
           currentJobParameters(true)
           parameters {

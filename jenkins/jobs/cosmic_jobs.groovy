@@ -1486,6 +1486,7 @@ FOLDERS.each { folderName ->
           extensions {
             cleanAfterCheckout()
             cleanBeforeCheckout()
+            wipeOutWorkspace()
           }
         }
       }

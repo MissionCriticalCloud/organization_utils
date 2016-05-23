@@ -532,12 +532,12 @@ freeStyleJob(BUMP_RELEASE_VERSION_JOB) {
                 "if [ -z \"\${VERSION}\" ]; then",
                 "    echo \"No release version specified, using snapshot version for release.\"",
                 "    ",
-                "    VERSION=\$(grep \"VERSION = \" setup.py | grep -o \'\".*\"\' | sed \'s/\"//g\' | sed \'s/-SNAPSHOT//g\')",
-                "    sed -i \"s/VERSION = .*/VERSION = \\\"\${VERSION}\\\"/g\" setup.py",
+                "    VERSION=\$(grep \"VERSION = \" setup.py | grep -o \"\'.*\'\" | sed \"s/\'//g\" | sed \'s/-SNAPSHOT//g\')",
+                "    sed -i \"s/VERSION = .*/VERSION = \\\'\${VERSION}\\\'/g\" setup.py",
                 "else",
                 "    echo \"Release version \${VERSION} specified.\"",
                 "    ",
-                "    sed -i \"s/VERSION = .*/VERSION = \\\"\${VERSION}\\\"/g\" setup.py",
+                "    sed -i \"s/VERSION = .*/VERSION = \\\'\${VERSION}\\\'/g\" setup.py",
                 "fi"
         ]))
     }
@@ -569,7 +569,7 @@ freeStyleJob(COMMIT_RELEASE_VERSION_JOB) {
                 "if [ -z \"\$(git status -su)\" ]; then",
                 "    echo \"==> [ERROR] Version didn\'t change during release.\"",
                 "else",
-                "    VERSION=\$(grep \"VERSION = \" setup.py | grep -o \'\".*\"\' | sed \'s/\"//g\' | sed \'s/-SNAPSHOT//g\')",
+                "    VERSION=\$(grep \"VERSION = \" setup.py | grep -o \"\'.*\'\" | sed \"s/\'//g\" | sed \'s/-SNAPSHOT//g\')",
                 "    ",
                 "    echo \"==> Committing new Release version \${VERSION} to repository\"",
                 "    git add setup.py",
@@ -678,7 +678,7 @@ freeStyleJob(PUSH_SNAPSHOT_NEXUS_JOB) {
     concurrentBuild(true)
     steps {
         shell(makeMultiline([
-                "SNAPSHOT_VERSION=\$(grep \"VERSION = \" setup.py | grep -o \'\".*\"\' | sed \'s/\"//g\')",
+                "SNAPSHOT_VERSION=\$(grep \"VERSION = \" setup.py | grep -o \"\'.*\'\" | sed \"s/\'//g\")",
                 "",
                 "mvn deploy:deploy-file \\",
                 "    -Durl=" + BETA_NEXUS_SNAPSHOT_URL + " \\",
@@ -709,7 +709,7 @@ freeStyleJob(PUSH_RELEASE_NEXUS_JOB) {
     concurrentBuild(true)
     steps {
         shell(makeMultiline([
-                "RELEASE_VERSION=\$(grep \"VERSION = \" setup.py | grep -o \'\".*\"\' | sed \'s/\"//g\')",
+                "RELEASE_VERSION=\$(grep \"VERSION = \" setup.py | grep -o \"\'.*\'\" | sed \"s/\'//g\")",
                 "",
                 "mvn deploy:deploy-file \\",
                 "    -Durl=" + BETA_NEXUS_RELEASE_URL + " \\",
@@ -743,12 +743,12 @@ freeStyleJob(BUMP_SNAPSHOT_VERSION_JOB) {
     }
     steps {
         shell(makeMultiline([
-                "VERSION=\$(grep \"VERSION = \" setup.py | grep -o \'\".*\"\' | sed \'s/\"//g\')",
+                "VERSION=\$(grep \"VERSION = \" setup.py | grep -o \"\'.*\'\" | sed \"s/\'//g\")",
                 "MINOR_VERSION=\$(echo \$VERSION | awk -F \\. {'print \$4'})",
                 "MINOR_VERSION=\$(expr \$MINOR_VERSION + 1)-SNAPSHOT",
                 "VERSION=\$(echo \$VERSION | sed \"s/\\.[^.]*\$//\")",
                 "VERSION=\$VERSION.\$MINOR_VERSION",
-                "sed -i \"s/VERSION = .*/VERSION = \\\"\${VERSION}\\\"/g\" setup.py",
+                "sed -i \"s/VERSION = .*/VERSION = \\\'\${VERSION}\\\'/g\" setup.py",
         ]))
     }
 }
@@ -778,7 +778,7 @@ freeStyleJob(COMMIT_SNAPSHOT_VERSION_JOB) {
                 "if [ -z \"\$(git status -su)\" ]; then",
                 "    echo \"==> [ERROR] Version didn\'t change during release.\"",
                 "else",
-                "    VERSION=\$(grep \"VERSION = \" setup.py | grep -o \'\".*\"\' | sed \'s/\"//g\' | sed \'s/-SNAPSHOT//g\')",
+                "    VERSION=\$(grep \"VERSION = \" setup.py | grep -o \"\'.*\'\" | sed \"s/\'//g\" | sed \'s/-SNAPSHOT//g\')",
                 "    echo \"==> Committing new snapshot version to repository\"",
                 "    git add setup.py",
                 "    git commit -m \"New snapshot version \${VERSION}\"",

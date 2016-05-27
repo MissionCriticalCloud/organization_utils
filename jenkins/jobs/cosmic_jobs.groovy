@@ -143,7 +143,7 @@ FOLDERS.each { folderName ->
   def mavenVersionsUpdateParent                       = "${folderName}/9996-maven-versions-update-parent"
   def mavenRelease                                    = "${folderName}/9997-maven-release-build"
   def mavenBuild                                      = "${folderName}/9998-maven-build"
-  def mavenSonarBuild                                 = "${folderName}/9999-maven-sonar-buid"
+  def mavenSonarBuild                                 = "${folderName}/9999-maven-sonar-build"
 
   def isDevFolder = folderName.endsWith('-dev')
   def shellPrefix = isDevFolder ? 'bash -x' : ''
@@ -824,6 +824,7 @@ FOLDERS.each { folderName ->
         phaseJob(mavenSonarBuild) {
           currentJobParameters(true)
           parameters {
+            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_REPO_BRANCH_PARAM))
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             sameNode()
             gitRevision(true)
@@ -1425,6 +1426,7 @@ FOLDERS.each { folderName ->
         description('sonar-runner user credentials')
       }
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+      stringParam(GIT_REPO_BRANCH_PARAM, 'sha1', 'Branch to be built')
     }
     environmentVariables {
       env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))

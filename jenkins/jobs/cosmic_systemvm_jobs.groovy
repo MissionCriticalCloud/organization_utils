@@ -3,7 +3,7 @@ def FOLDER_NAME = 'cosmic-systemvm'
 def PACKER_BUILD_JOB = "${FOLDER_NAME}/packer-build"
 def SEED_JOB         = "${FOLDER_NAME}/seed-job"
 
-def DEFAULT_GIT_REPO_BRANCH_PARAM = 'sha1'
+def DEFAULT_GIT_REPO_BRANCH_PARAM = 'branch'
 
 def ORGANIZATION_NAME                        = 'MissionCriticalCloud'
 def ORGANIZATION_UTILS_REPOSITORY_NAME       = 'organization_utils'

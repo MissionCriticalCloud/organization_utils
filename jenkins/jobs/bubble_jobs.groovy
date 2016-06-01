@@ -3,7 +3,7 @@ def FOLDER_NAME = 'mcc-bubble'
 def TRACKING_REPO_UPDATE_JOB = "${FOLDER_NAME}/tracking-repo-update"
 def SEED_JOB                 = "${FOLDER_NAME}/seed-job"
 
-def DEFAULT_GIT_REPO_BRANCH_PARAM = 'sha1'
+def DEFAULT_GIT_REPO_BRANCH_PARAM = 'branch'
 
 def ORGANIZATION_NAME                        = 'MissionCriticalCloud'
 def ORGANIZATION_UTILS_REPOSITORY_NAME       = 'organization_utils'

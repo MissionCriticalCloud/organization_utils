@@ -5,7 +5,7 @@ import org.kohsuke.github.GitHub
 
 def DEFAULT_GIT_REPO_BRANCH = 'remotes/origin/pr/*/head'
 
-def GIT_REPO_BRANCH_PARAM    = 'sha1'
+def GIT_REPO_BRANCH_PARAM    = 'branch'
 def CUSTOM_WORKSPACE_PARAM   = 'CUSTOM_WORKSPACE'
 def COSMIC_DIRECTORY_PARAM   = 'COSMIC_DIRECTORY'
 
@@ -41,6 +41,7 @@ def MAVEN_RELEASE_AUTO_VERSION_SUBMODULES = '-DautoVersionSubmodules=true'
 def MAVEN_RELEASE_NO_PUSH                 = '-DpushChanges=false -DlocalCheckout=true'
 
 def GIT_BRANCH_ENV_VARIABLE_NAME = 'GIT_BRANCH'
+def GIT_PR_BRANCH_ENV_VARIABLE_NAME = 'ghprbActualCommit'
 
 def DEFAULT_GITHUB_JOB_LABEL = 'mccd jenkins build'
 
@@ -852,7 +853,7 @@ FOLDERS.each { folderName ->
   // build for pull requests to tracking repo
   multiJob(trackingRepoPullRequestBuild) {
     parameters {
-      stringParam(GIT_REPO_BRANCH_PARAM, 'sha1', 'Branch to be built')
+      stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
     }
     concurrentBuild()
     label(DEFAULT_EXECUTOR)
@@ -1463,7 +1464,7 @@ FOLDERS.each { folderName ->
     // job to build cosmic a plugin
     multiJob(repoJobName) {
       parameters {
-        stringParam(GIT_REPO_BRANCH_PARAM, DEFAULT_GIT_REPO_BRANCH, 'Branch to be built')
+        stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
       }
       concurrentBuild()
       label(DEFAULT_EXECUTOR)

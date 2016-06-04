@@ -106,8 +106,7 @@ def COSMIC_TESTS_WITH_HARDWARE = [
   'smoke/test_loadbalance.py',
   'smoke/test_privategw_acl.py',
   'smoke/test_ssvm.py',
-  'smoke/test_vpc_vpn.py',
-  'smoke/test_portforward_remove.py'
+  'smoke/test_vpc_vpn.py'
 ]
 
 def DEFAULT_EXECUTOR     = 'executor'

@@ -14,7 +14,8 @@ def BUMP_SNAPSHOT_VERSION_JOB   = "${FOLDER_NAME}/0032-bump-snapshot-version-job
 def COMMIT_SNAPSHOT_VERSION_JOB = "${FOLDER_NAME}/0033-commit-snapshot-version-job"
 def BUILD_API_JOB               = "${FOLDER_NAME}/0040-build-api-job"
 def COMMIT_API_CHANGES_JOB      = "${FOLDER_NAME}/0041-commit-api-changes-job"
-def PYTHON_EGG_JOB              = "${FOLDER_NAME}/0050-python-egg-job"
+def PYTHON_TESTS_JOB            = "${FOLDER_NAME}/0050-python-tests-job"
+def PYTHON_EGG_JOB              = "${FOLDER_NAME}/0051-python-egg-job"
 def PUSH_RELEASE_NEXUS_JOB      = "${FOLDER_NAME}/0060-push-release-nexus-job"
 def PUSH_SNAPSHOT_NEXUS_JOB     = "${FOLDER_NAME}/0061-push-snapshot-nexus-job"
 def SEED_JOB                    = "${FOLDER_NAME}/9991-seed-job"
@@ -241,6 +242,14 @@ multiJob(MARVIN_BUILD_JOB) {
                 }
             }
         }
+        phase('Test Python code') {
+            phaseJob(PYTHON_TESTS_JOB) {
+                parameters {
+                    sameNode()
+                    predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/marvin")
+                }
+            }
+        }
         phase('Build Python EGG') {
             phaseJob(PYTHON_EGG_JOB) {
                 parameters {
@@ -344,6 +353,14 @@ multiJob(RELEASE_JOB) {
         }
         phase('Commit API files') {
             phaseJob(COMMIT_API_CHANGES_JOB) {
+                parameters {
+                    sameNode()
+                    predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/marvin")
+                }
+            }
+        }
+        phase('Test Python code') {
+            phaseJob(PYTHON_TESTS_JOB) {
                 parameters {
                     sameNode()
                     predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/marvin")
@@ -635,6 +652,36 @@ freeStyleJob(COMMIT_API_CHANGES_JOB) {
                 '  git push origin HEAD:master',
                 'fi'
         ]))
+    }
+}
+
+freeStyleJob(PYTHON_TESTS_JOB) {
+    parameters {
+        stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+    }
+    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+    label(DEFAULT_EXECUTOR)
+    concurrentBuild()
+    throttleConcurrentBuilds {
+        maxPerNode(1)
+    }
+    logRotator {
+        numToKeep(50)
+        artifactNumToKeep(10)
+    }
+    wrappers {
+        colorizeOutput('xterm')
+        timestamps()
+    }
+    steps {
+        shell('nosetests -v --with-xunit tests')
+    }
+    publishers {
+        archiveXUnit {
+            jUnit {
+                pattern('nosetests.xml')
+            }
+        }
     }
 }
 

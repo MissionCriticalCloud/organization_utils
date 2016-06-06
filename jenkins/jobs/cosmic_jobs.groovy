@@ -276,6 +276,9 @@ FOLDERS.each { folderName ->
   }
 
   multiJob(trackingRepoMasterBuild) {
+    parameters {
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
+    }
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
@@ -319,6 +322,7 @@ FOLDERS.each { folderName ->
             sameNode()
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
             gitRevision(true)
           }
         }
@@ -351,6 +355,9 @@ FOLDERS.each { folderName ->
   }
 
   multiJob(trackingRepoBranchBuild) {
+    parameters {
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
+    }
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
@@ -394,6 +401,7 @@ FOLDERS.each { folderName ->
             sameNode()
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
             predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
             gitRevision(true)
           }
         }

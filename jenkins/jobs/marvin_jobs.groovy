@@ -271,6 +271,11 @@ multiJob(MARVIN_BUILD_JOB) {
         archiveArtifacts {
             pattern('marvin/dist/*')
         }
+        archiveXUnit {
+            jUnit {
+                pattern('nosetests.xml')
+            }
+        }
     }
 }
 
@@ -403,6 +408,11 @@ multiJob(RELEASE_JOB) {
     publishers {
         archiveArtifacts {
             pattern('marvin/dist/*')
+        }
+        archiveXUnit {
+            jUnit {
+                pattern('nosetests.xml')
+            }
         }
     }
 }

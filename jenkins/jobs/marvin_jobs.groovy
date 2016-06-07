@@ -273,7 +273,7 @@ multiJob(MARVIN_BUILD_JOB) {
         }
         archiveXUnit {
             jUnit {
-                pattern('nosetests.xml')
+                pattern('marvin/nosetests.xml')
             }
         }
     }
@@ -411,7 +411,7 @@ multiJob(RELEASE_JOB) {
         }
         archiveXUnit {
             jUnit {
-                pattern('nosetests.xml')
+                pattern('marvin/nosetests.xml')
             }
         }
     }

@@ -356,6 +356,7 @@ FOLDERS.each { folderName ->
 
   multiJob(trackingRepoBranchBuild) {
     parameters {
+      stringParam(GIT_REPO_BRANCH_PARAM, 'origin/build/**', 'Branch to be built')
       textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
     }
     label(executorLabelMct)
@@ -384,7 +385,7 @@ FOLDERS.each { folderName ->
           name('origin')
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
-        branch('origin/build/**')
+        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
         extensions {
           cleanAfterCheckout()
           cleanBeforeCheckout()

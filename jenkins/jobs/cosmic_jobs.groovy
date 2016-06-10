@@ -418,18 +418,6 @@ FOLDERS.each { folderName ->
             publishTestStabilityData()
         }
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -927,18 +915,6 @@ FOLDERS.each { folderName ->
             publishTestStabilityData()
         }
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -1021,15 +997,6 @@ FOLDERS.each { folderName ->
       archiveArtifacts {
         pattern(makePatternList(CLEAN_UP_JOB_ARTIFACTS))
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-        }
-      }
     }
   }
 
@@ -1067,15 +1034,6 @@ FOLDERS.each { folderName ->
       archiveArtifacts {
         pattern(makePatternList(COSMIC_PACKAGING_ARTEFACTS))
         onlyIfSuccessful()
-      }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-        }
       }
     }
   }
@@ -1178,18 +1136,6 @@ FOLDERS.each { folderName ->
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
     }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-        }
-      }
-    }
   }
 
   // generic Maven job that builds on a folder (instead of a git repo)
@@ -1227,18 +1173,6 @@ FOLDERS.each { folderName ->
     goals('-Psystemvm')
     goals('-Psonar-ci-cosmic')
     goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
   }
 
   freeStyleJob(mavenVersionsUpdateParent) {

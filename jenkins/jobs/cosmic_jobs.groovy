@@ -356,6 +356,7 @@ FOLDERS.each { folderName ->
 
   multiJob(trackingRepoBranchBuild) {
     parameters {
+      stringParam(GIT_REPO_BRANCH_PARAM, 'origin/build/**', 'Branch to be built')
       textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
     }
     label(executorLabelMct)
@@ -384,7 +385,7 @@ FOLDERS.each { folderName ->
           name('origin')
           refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
         }
-        branch('origin/build/**')
+        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
         extensions {
           cleanAfterCheckout()
           cleanBeforeCheckout()
@@ -416,18 +417,6 @@ FOLDERS.each { folderName ->
         retainLongStdout()
         testDataPublishers {
             publishTestStabilityData()
-        }
-      }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
         }
       }
     }
@@ -927,18 +916,6 @@ FOLDERS.each { folderName ->
             publishTestStabilityData()
         }
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
     }
   }
 
@@ -1021,15 +998,6 @@ FOLDERS.each { folderName ->
       archiveArtifacts {
         pattern(makePatternList(CLEAN_UP_JOB_ARTIFACTS))
       }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-        }
-      }
     }
   }
 
@@ -1067,15 +1035,6 @@ FOLDERS.each { folderName ->
       archiveArtifacts {
         pattern(makePatternList(COSMIC_PACKAGING_ARTEFACTS))
         onlyIfSuccessful()
-      }
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-        }
       }
     }
   }
@@ -1178,18 +1137,6 @@ FOLDERS.each { folderName ->
     steps {
       shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
     }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-        }
-      }
-    }
   }
 
   // generic Maven job that builds on a folder (instead of a git repo)
@@ -1227,18 +1174,6 @@ FOLDERS.each { folderName ->
     goals('-Psystemvm')
     goals('-Psonar-ci-cosmic')
     goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
   }
 
   freeStyleJob(mavenVersionsUpdateParent) {

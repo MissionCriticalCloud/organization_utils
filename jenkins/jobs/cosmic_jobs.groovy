@@ -1168,7 +1168,9 @@ FOLDERS.each { folderName ->
     concurrentBuild(true)
     goals('clean')
     goals('install')
-    goals('deploy')
+    if(!isDevFolder) {
+      goals('deploy')
+    }
     goals('-U')
     goals('-Pdeveloper')
     goals('-Psystemvm')

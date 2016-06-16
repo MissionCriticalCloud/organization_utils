@@ -328,18 +328,18 @@ FOLDERS.each { folderName ->
         }
       }
     }
-    publishers {
-      archiveArtifacts {
-        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-        onlyIfSuccessful()
-      }
-      archiveJunit(makePatternList(XUNIT_REPORTS)) {
-        retainLongStdout()
-        testDataPublishers {
-            publishTestStabilityData()
+    if(!isDevFolder) {
+      publishers {
+        archiveArtifacts {
+          pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
+          onlyIfSuccessful()
         }
-      }
-      if(!isDevFolder) {
+        archiveJunit(makePatternList(XUNIT_REPORTS)) {
+          retainLongStdout()
+          testDataPublishers {
+              publishTestStabilityData()
+          }
+        }
         slackNotifications {
           notifyBuildStart()
           notifyAborted()
@@ -408,15 +408,17 @@ FOLDERS.each { folderName ->
         }
       }
     }
-    publishers {
-      archiveArtifacts {
-        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-        onlyIfSuccessful()
-      }
-      archiveJunit(makePatternList(XUNIT_REPORTS)) {
-        retainLongStdout()
-        testDataPublishers {
-            publishTestStabilityData()
+    if(!isDevFolder) {
+      publishers {
+        archiveArtifacts {
+          pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
+          onlyIfSuccessful()
+        }
+        archiveJunit(makePatternList(XUNIT_REPORTS)) {
+          retainLongStdout()
+          testDataPublishers {
+              publishTestStabilityData()
+          }
         }
       }
     }
@@ -1466,15 +1468,15 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      publishers {
-        archiveJunit(makePatternList(MAVEN_REPORTS)) {
-          retainLongStdout(true)
-          testDataPublishers {
-              publishTestStabilityData()
+      if(!isDevFolder) {
+        publishers {
+          archiveJunit(makePatternList(MAVEN_REPORTS)) {
+            retainLongStdout(true)
+            testDataPublishers {
+                publishTestStabilityData()
+            }
+            allowEmptyResults(repoName.matches('cosmic-(client|checkstyle)'))
           }
-          allowEmptyResults(repoName.matches('cosmic-(client|checkstyle)'))
-        }
-        if(!isDevFolder) {
           slackNotifications {
             notifyBuildStart()
             notifyAborted()

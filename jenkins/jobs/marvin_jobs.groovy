@@ -627,7 +627,7 @@ freeStyleJob(BUILD_API_JOB) {
     }
     steps {
         shell("rm -rf ./cloudstackAPI")
-        shell("python codegenerator.py -s ../../cosmic/cosmic-core/tools/apidoc/target/commands.xml")
+        shell("python codegenerator.py -s ../../cosmic/cosmic-core/apidoc/target/commands.xml")
     }
 }
 

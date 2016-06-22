@@ -1440,6 +1440,26 @@ FOLDERS.each { folderName ->
       }
     }
   }
+
+  listView(folderName + '/cosmic_old') {
+    description('Jobs related to the old Cosmic repository structure.')
+    jobs {
+      name(trackingRepoUpdate)
+      name(trackingRepoMasterBuild)
+      name(trackingRepoBranchBuild)
+      name(trackingRepoPullRequestBuild)
+      name(trackingRepoReleaseBuild)
+    }
+    columns {
+      status()
+      weather()
+      name()
+      lastSuccess()
+      lastFailure()
+      lastDuration()
+      buildButton()
+    }
+  }
 }
 
 def getPluginRepositories(githubOrganizatioName, githubUserName) {

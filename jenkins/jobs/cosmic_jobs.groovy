@@ -302,6 +302,7 @@ FOLDERS.each { folderName ->
   multiJob("${folderName}/" + cosmicPullRequestBuild) {
     parameters {
       stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
     }
     concurrentBuild()
     throttleConcurrentBuilds {

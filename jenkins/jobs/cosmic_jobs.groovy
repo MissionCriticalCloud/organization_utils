@@ -236,11 +236,6 @@ FOLDERS.each { folderName ->
         colorizeOutput('xterm')
         timestamps()
       }
-      triggers {
-        if (!isDevFolder) {
-          cron('H/15 * * * *')
-        }
-      }
       scm {
         git {
           remote {
@@ -291,11 +286,6 @@ FOLDERS.each { folderName ->
     wrappers {
       colorizeOutput('xterm')
       timestamps()
-    }
-    triggers {
-      if (!isDevFolder) {
-        githubPush()
-      }
     }
     scm {
       git {
@@ -371,11 +361,6 @@ FOLDERS.each { folderName ->
     wrappers {
       colorizeOutput('xterm')
       timestamps()
-    }
-    triggers {
-      if (!isDevFolder) {
-        githubPush()
-      }
     }
     scm {
       git {
@@ -878,23 +863,6 @@ FOLDERS.each { folderName ->
         }
         recursiveSubmodules(true)
         trackingSubmodules(true)
-      }
-    }
-    triggers {
-      if(!isDevFolder) {
-        pullRequest {
-          extensions {
-            triggerPhrase('go build')
-            permitAll()
-            useGitHubHooks()
-            commitStatus {
-              context(DEFAULT_GITHUB_JOB_LABEL)
-              startedStatus('building...')
-              completedStatus('SUCCESS', 'All is well')
-              completedStatus('FAILURE', 'Something went wrong. Investigate!')
-            }
-          }
-        }
       }
     }
     steps {
@@ -1434,23 +1402,6 @@ FOLDERS.each { folderName ->
             cleanAfterCheckout()
             cleanBeforeCheckout()
             wipeOutWorkspace()
-          }
-        }
-      }
-      triggers {
-        if(!isDevFolder) {
-          pullRequest {
-            extensions {
-              triggerPhrase('go build')
-              permitAll()
-              useGitHubHooks()
-              commitStatus {
-                context(DEFAULT_GITHUB_JOB_LABEL)
-                startedStatus('building...')
-                completedStatus('SUCCESS', 'All is well')
-                completedStatus('FAILURE', 'Something went wrong. Investigate!')
-              }
-            }
           }
         }
       }

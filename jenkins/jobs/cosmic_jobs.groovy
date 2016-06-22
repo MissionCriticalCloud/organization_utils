@@ -356,7 +356,6 @@ FOLDERS.each { folderName ->
           parameters {
             sameNode()
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
             gitRevision(true)
           }

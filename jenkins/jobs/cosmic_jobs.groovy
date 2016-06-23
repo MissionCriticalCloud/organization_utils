@@ -30,15 +30,12 @@ def MAVEN_RELEASE_VERSION_PARAM       = 'releaseVersion'
 
 def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
 
-def GITHUB_OAUTH2_TOKEN_ENV_VAR   = 'MCCD_JENKINS_OAUTH2_TOKEN'
 def MAVEN_RELEASE_VERSION_ENV_VAR = 'releaseVersion'
 def MAVEN_OPTIONS_ENV_VAR         = 'MAVEN_OPTS'
 
 def MAVEN_OPTIONS_RELEASE_JOB = '-Xmx2048m -Xms2048m'
 
-def MAVEN_RELEASE_NO_SUBMODULES           = '-N -Darguments=-N'
-def MAVEN_RELEASE_AUTO_VERSION_SUBMODULES = '-DautoVersionSubmodules=true'
-def MAVEN_RELEASE_NO_PUSH                 = '-DpushChanges=false -DlocalCheckout=true'
+def MAVEN_RELEASE_NO_PUSH = '-DpushChanges=false -DlocalCheckout=true'
 
 def GIT_BRANCH_ENV_VARIABLE_NAME = 'GIT_BRANCH'
 def GIT_PR_BRANCH_ENV_VARIABLE_NAME = 'ghprbActualCommit'
@@ -120,42 +117,50 @@ def FOLDERS = [
 ]
 
 FOLDERS.each { folderName ->
-  def trackingRepoUpdate                              = "${folderName}/0000-tracking-repo-update"
-  def trackingRepoMasterBuild                         = "${folderName}/0001-tracking-repo-master-build"
-  def trackingRepoBranchBuild                         = "${folderName}/0002-tracking-repo-branch-build"
-  def trackingRepoPullRequestBuild                    = "${folderName}/0003-tracking-repo-pull-request-build"
-  def trackingRepoReleaseBuild                        = "${folderName}/0004-tracking-repo-release-build"
 
-  def cosmicMasterBuild                               = "0005-cosmic-master-build"
-  def cosmicPullRequestBuild                          = "0006-cosmic-pull-request-build"
-  def cosmicReleaseBuild                              = "0007-cosmic-release-build"
+  def cosmicView = "Cosmic"
 
-  def job_name_counter = 5 // this will be used to index plugin pr jobs, it should follow from the last number in the above line
+  def cosmicMasterBuild       = "0001-cosmic-master-build"
+  def cosmicPullRequestBuild  = "0002-cosmic-pull-request-build"
+  def cosmicReleaseBuild      = "0003-cosmic-release-build"
 
-  def trackingRepoBuild                               = "${folderName}/0020-tracking-repo-build"
-  def trackingRepoBuildAndPackageJob                  = "${folderName}/0100-tracking-repo-build-and-package"
-  def packageCosmicJob                                = "${folderName}/1000-rpm-package"
-  def prepareInfraForIntegrationTests                 = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
-  def setupInfraForIntegrationTests                   = "${folderName}/0300-setup-infrastructure-for-integration-tests"
-  def deployDatacenterForIntegrationTests             = "${folderName}/0400-deploy-datacenter-for-integration-tests"
-  def runIntegrationTests                             = "${folderName}/0500-run-integration-tests"
-  def collectArtifactsAndCleanup                      = "${folderName}/0600-collect-artifacts-and-cleanup"
-  def seedJob                                         = "${folderName}/9991-seed-job"
-  def mavenReleaseUpdateDependenciesToNextSnapshot    = "${folderName}/9993-maven-versions-update-dependencies-next-snapshot"
-  def mavenReleaseUpdateDependenciesToReleaseVersions = "${folderName}/9994-maven-versions-update-dependencies-release-version"
-  def mavenPluginRelease                              = "${folderName}/9995-maven-release-build"
-  def mavenVersionsUpdateParent                       = "${folderName}/9996-maven-versions-update-parent"
-  def mavenRelease                                    = "${folderName}/9997-maven-release-build"
-  def mavenBuild                                      = "${folderName}/9998-maven-build"
-  def mavenSonarBuild                                 = "${folderName}/9999-maven-sonar-build"
+  def fullBuild                           = "${folderName}/0020-full-build"
+  def compileAndPackageJob                = "${folderName}/0100-full-build-and-package"
+  def packageCosmicJob                    = "${folderName}/1000-rpm-package"
+  def prepareInfraForIntegrationTests     = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
+  def setupInfraForIntegrationTests       = "${folderName}/0300-setup-infrastructure-for-integration-tests"
+  def deployDatacenterForIntegrationTests = "${folderName}/0400-deploy-datacenter-for-integration-tests"
+  def runIntegrationTests                 = "${folderName}/0500-run-integration-tests"
+  def collectArtifactsAndCleanup          = "${folderName}/0600-collect-artifacts-and-cleanup"
+  def mavenBuild                          = "${folderName}/9997-maven-build"
+  def mavenSonarBuild                     = "${folderName}/9998-maven-sonar-build"
+  def seedJob                             = "${folderName}/9999-seed-job"
 
   def isDevFolder = folderName.endsWith('-dev')
   def shellPrefix = isDevFolder ? 'bash -x' : ''
   def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
 
-  def helperJobsFolder = 'helper_jobs' + (isDevFolder ? '_dev' : '')
+  folder(folderName) {
+    primaryView(cosmicView)
+  }
 
-  folder(folderName)
+  listView("${folderName}/${cosmicView}") {
+    description('Cosmic build and release jobs.')
+    jobs {
+      name(cosmicMasterBuild)
+      name(cosmicPullRequestBuild)
+      name(cosmicReleaseBuild)
+    }
+    columns {
+      status()
+      weather()
+      name()
+      lastSuccess()
+      lastFailure()
+      lastDuration()
+      buildButton()
+    }
+  }
 
   // seed job is meant to trigger when this file changes in git
   freeStyleJob(seedJob) {
@@ -189,35 +194,10 @@ FOLDERS.each { folderName ->
       }
     }
     steps {
-      // place a gradle build file that copies required dependencies into workspace
-      shell(makeMultiline([
-        'echo "defaultTasks \'libs\'',
-        'repositories {',
-        '  jcenter()',
-        '}',
-        'configurations {',
-        '  libs',
-        '}',
-        'dependencies {',
-        '  libs \'org.kohsuke:github-api:1.70\'',
-        '}',
-        'task clean(type: Delete) {',
-        '  delete \'lib\'',
-        '}',
-        'task libs(type: Copy) {',
-        '  into \'lib\'',
-        '  from configurations.libs',
-        '}',
-        'task wrapper(type: Wrapper) {',
-        '  gradleVersion = \'2.2.1\'',
-        '}" > build.gradle',
-        '/usr/local/gradle/bin/gradle libs'
-      ]))
       dsl {
         if(!isDevFolder) {
           external('jenkins/jobs/cosmic_jobs.groovy')
         }
-        additionalClasspath('lib/*')
       }
     }
   }
@@ -254,15 +234,13 @@ FOLDERS.each { folderName ->
         }
         branch('master')
         extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
           wipeOutWorkspace()
         }
       }
     }
     steps {
       phase('Full Build') {
-        phaseJob(trackingRepoBuild) {
+        phaseJob(fullBuild) {
           parameters {
             sameNode()
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
@@ -306,7 +284,7 @@ FOLDERS.each { folderName ->
     }
     concurrentBuild()
     throttleConcurrentBuilds {
-      maxPerNode(1)
+      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
     label(executorLabelMct)
     logRotator {
@@ -344,15 +322,13 @@ FOLDERS.each { folderName ->
         }
         branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
         extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
           wipeOutWorkspace()
         }
       }
     }
     steps {
       phase('Full Build') {
-        phaseJob(trackingRepoBuild) {
+        phaseJob(fullBuild) {
           parameters {
             sameNode()
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
@@ -363,7 +339,7 @@ FOLDERS.each { folderName ->
       }
     }
     publishers {
-      archiveJunit(makePatternList(MAVEN_REPORTS)) {
+      archiveJunit(makePatternList(XUNIT_REPORTS)) {
         retainLongStdout()
         testDataPublishers {
           publishTestStabilityData()
@@ -376,11 +352,8 @@ FOLDERS.each { folderName ->
     parameters {
       stringParam(MAVEN_RELEASE_VERSION_PARAM, "", 'Release version')
     }
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      maxPerNode(1)
-    }
-    label(executorLabelMct)
+    concurrentBuild(false)
+    label(DEFAULT_EXECUTOR)
     logRotator {
       numToKeep(50)
       artifactNumToKeep(10)
@@ -395,12 +368,10 @@ FOLDERS.each { folderName ->
           github(COSMIC_GITHUB_REPOSITORY, 'ssh')
           credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
           name('origin')
-          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
+          refspec('+refs/heads/*:refs/remotes/origin/*')
         }
         branch("master")
         extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
           wipeOutWorkspace()
         }
       }
@@ -408,517 +379,12 @@ FOLDERS.each { folderName ->
     preBuildSteps {
       shell("git checkout master")
     }
-    goals("release:prepare release:perform -Psystemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+    goals("release:prepare release:perform -Psystemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM) + " " + isDevFolder ? MAVEN_RELEASE_NO_PUSH : "")
   }
 
 
-
-  if(!isDevFolder) {
-    freeStyleJob(trackingRepoUpdate) {
-      parameters {
-        stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
-      }
-      label(DEFAULT_EXECUTOR)
-      concurrentBuild()
-      throttleConcurrentBuilds {
-        maxPerNode(1)
-      }
-      logRotator {
-        numToKeep(50)
-        artifactNumToKeep(10)
-      }
-      wrappers {
-        colorizeOutput('xterm')
-        timestamps()
-      }
-      scm {
-        git {
-          remote {
-            github(COSMIC_GITHUB_REPOSITORY, 'ssh' )
-            credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-          }
-          branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
-          shallowClone(false)
-          extensions {
-            cleanAfterCheckout()
-            cleanBeforeCheckout()
-            wipeOutWorkspace()
-          }
-          recursiveSubmodules(true)
-          trackingSubmodules(true)
-        }
-      }
-      steps {
-        shell(makeMultiline([
-          'git config --global user.email "int-mccd_jenkins@schubergphilis.com"',
-          'git config --global user.name "mccd-jenkins"',
-          'if [ -z "$(git status -su)" ]; then',
-          '  echo "==> No submodule changed"',
-          'else',
-          '  echo "==> Updating all submodules in remote repository"',
-          '  git add --all',
-          '  git commit -m "Update all submodules to latest HEAD"',
-          '  git push origin HEAD:master',
-          'fi'
-        ]))
-      }
-    }
-  }
-
-  multiJob(trackingRepoMasterBuild) {
-    parameters {
-      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
-    }
-    label(executorLabelMct)
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(20)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    scm {
-      git {
-        remote {
-          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
-          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-          name('origin')
-          refspec('+refs/heads/master')
-        }
-        branch('master')
-        extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
-          wipeOutWorkspace()
-        }
-        recursiveSubmodules(true)
-        trackingSubmodules(false)
-      }
-    }
-    steps {
-      phase('Full Build') {
-        phaseJob(trackingRepoBuild) {
-          parameters {
-            sameNode()
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
-            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
-            gitRevision(true)
-          }
-        }
-      }
-    }
-    if(!isDevFolder) {
-      publishers {
-        archiveArtifacts {
-          pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-          onlyIfSuccessful()
-        }
-        archiveJunit(makePatternList(XUNIT_REPORTS)) {
-          retainLongStdout()
-          testDataPublishers {
-              publishTestStabilityData()
-          }
-        }
-        slackNotifications {
-          notifyBuildStart()
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-          includeTestSummary()
-          showCommitList()
-        }
-      }
-    }
-  }
-
-  multiJob(trackingRepoBranchBuild) {
-    parameters {
-      stringParam(GIT_REPO_BRANCH_PARAM, 'origin/build/**', 'Branch to be built')
-      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
-    }
-    label(executorLabelMct)
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(20)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    scm {
-      git {
-        remote {
-          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
-          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-          name('origin')
-          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
-        }
-        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-        extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
-          wipeOutWorkspace()
-        }
-        recursiveSubmodules(true)
-        trackingSubmodules(false)
-      }
-    }
-    steps {
-      phase('Full build') {
-        phaseJob(trackingRepoBuild) {
-          parameters {
-            sameNode()
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
-            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
-            gitRevision(true)
-          }
-        }
-      }
-    }
-    if(!isDevFolder) {
-      publishers {
-        archiveArtifacts {
-          pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-          onlyIfSuccessful()
-        }
-        archiveJunit(makePatternList(XUNIT_REPORTS)) {
-          retainLongStdout()
-          testDataPublishers {
-              publishTestStabilityData()
-          }
-        }
-      }
-    }
-  }
-
-  multiJob(trackingRepoReleaseBuild) {
-    parameters {
-      stringParam(MAVEN_RELEASE_VERSION_PARAM, '', 'Custom release version (default is empty)')
-    }
-    blockOn(trackingRepoMasterBuild){
-      blockLevel('GLOBAL')
-      scanQueueFor('ALL')
-    }
-    label(executorLabelMct)
-    concurrentBuild()
-    throttleConcurrentBuilds {
-      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    scm {
-      git {
-        remote {
-          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
-          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-          name('origin')
-        }
-        branch('master')
-        extensions {
-          wipeOutWorkspace()
-          localBranch('master')
-        }
-        recursiveSubmodules(true)
-        trackingSubmodules(false)
-      }
-    }
-    steps {
-      phase('Release Cosmic') {
-        phaseJob(mavenRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_NO_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Update Parent in Submodules') {
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-agent")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-core")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-client")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-event-bus-rabbitmq")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-kvm")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-ovm3")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-xenserver")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenVersionsUpdateParent) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-sha256salted")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Release Cosmic Core') {
-        phaseJob(mavenRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-core")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Release Cosmic Plugins') {
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-agent")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-event-bus-rabbitmq")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-kvm")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-xenserver")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-ovm3")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-sha256salted")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Release Cosmic Client') {
-        phaseJob(mavenPluginRelease) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-client")
-            predefinedProp(MAVEN_EXTRA_GOALS_PARAM, MAVEN_RELEASE_AUTO_VERSION_SUBMODULES)
-            predefinedProp(MAVEN_RELEASE_VERSION_PARAM, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      shell('mvn deploy -N') // this will push the new parent snapshot to nexus so it can be updated in the submodules
-      phase('Update dependencies in Cosmic Core') {
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-core")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Update dependencies in submodules') {
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-agent")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-event-bus-rabbitmq")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-ovm3")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-kvm")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-hypervisor-xenserver")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-ldap")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-plugin-user-authenticator-sha256salted")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Update dependencies in Cosmic Client') {
-        phaseJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR + "/cosmic-client")
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-    }
-    publishers {
-      if(!isDevFolder) {
-        slackNotifications {
-          notifyAborted()
-          notifyFailure()
-          notifyNotBuilt()
-          notifyUnstable()
-          notifyBackToNormal()
-        }
-      }
-    }
-  }
-
-  // Build for a branch of tracking repo
-  multiJob(trackingRepoBuild) {
+  // Build for a branch of cosmic
+  multiJob(fullBuild) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
       stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
@@ -940,7 +406,7 @@ FOLDERS.each { folderName ->
     }
     steps {
       phase('Build maven project and prepare infrastructure for integrations tests') {
-        phaseJob(trackingRepoBuildAndPackageJob) {
+        phaseJob(compileAndPackageJob) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
@@ -1029,63 +495,8 @@ FOLDERS.each { folderName ->
     }
   }
 
-  // build for pull requests to tracking repo
-  multiJob(trackingRepoPullRequestBuild) {
-    parameters {
-      stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
-    }
-    concurrentBuild()
-    label(DEFAULT_EXECUTOR)
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    scm {
-      git {
-        remote {
-          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
-          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-          name('origin')
-          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
-        }
-        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-        extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
-          wipeOutWorkspace()
-        }
-        recursiveSubmodules(true)
-        trackingSubmodules(true)
-      }
-    }
-    steps {
-      phase('Build maven project') {
-        phaseJob(mavenBuild) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-    }
-    publishers {
-      archiveJunit(makePatternList(MAVEN_REPORTS)) {
-        retainLongStdout()
-        testDataPublishers {
-            publishTestStabilityData()
-        }
-      }
-    }
-  }
-
   // Job that builds with maven and packaging scripts
-  multiJob(trackingRepoBuildAndPackageJob) {
+  multiJob(compileAndPackageJob) {
     parameters {
       credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
         type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
@@ -1225,7 +636,7 @@ FOLDERS.each { folderName ->
     }
   }
 
-  // Job that prepares the infrastructure for the cosmic integration tests
+  // Job that deploys and configures build artefacts for the cosmic integration tests
   freeStyleJob(setupInfraForIntegrationTests) {
     parameters {
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
@@ -1289,7 +700,7 @@ FOLDERS.each { folderName ->
     label(executorLabelMct)
     concurrentBuild()
     throttleConcurrentBuilds {
-      maxPerNode(2) // there will be two test runs in parallel (with/without hardware)
+      maxPerNode(1)
     }
     logRotator {
       numToKeep(50)
@@ -1316,9 +727,6 @@ FOLDERS.each { folderName ->
       }
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
-    environmentVariables {
-      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-    }
     logRotator {
       numToKeep(50)
       artifactNumToKeep(10)
@@ -1343,190 +751,6 @@ FOLDERS.each { folderName ->
     goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
   }
 
-  freeStyleJob(mavenVersionsUpdateParent) {
-    parameters {
-      credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
-        type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
-        required()
-        defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
-        description('mccd jenkins OAuth2 token credential')
-      }
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-    }
-    environmentVariables {
-      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    steps {
-      shell(makeMultiline([
-        'git checkout master',
-        'mvn versions:update-parent -N',
-        'git add pom.xml',
-        'git commit -m "Update parent to latest release version"',
-        'git clean -xdf'
-      ]))
-    }
-  }
-
-  // generic Maven job that builds on a folder (instead of a git repo)
-  // this job is meant to be called by another job that already checked out a maven project
-  freeStyleJob(mavenRelease) {
-    parameters {
-      credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
-        type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
-        required()
-        defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
-        description('mccd jenkins OAuth2 token credential')
-      }
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      stringParam(MAVEN_EXTRA_GOALS_PARAM, '', 'Extra goals and config for the job')
-      stringParam(MAVEN_RELEASE_VERSION_PARAM, '', 'The version of the new release (empty means the build number will increment)')
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-      environmentVariables {
-        env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-        env(MAVEN_OPTIONS_ENV_VAR, MAVEN_OPTIONS_RELEASE_JOB)
-      }
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    steps {
-      shell("mvn -B release:prepare release:perform -Psystemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${injectJobVariable(MAVEN_EXTRA_GOALS_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
-    }
-  }
-
-  multiJob(mavenPluginRelease) {
-    parameters {
-      credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
-        type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
-        required()
-        defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
-        description('mccd jenkins OAuth2 token credential')
-      }
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-      stringParam(MAVEN_EXTRA_GOALS_PARAM, '', 'Extra goals and config for the job')
-      stringParam(MAVEN_RELEASE_VERSION_PARAM, '', 'The version of the new release (empty means the build number will increment)')
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-      environmentVariables {
-        env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-      }
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    steps {
-      phase('Update dependencies to release versions') {
-        phaseJob(mavenReleaseUpdateDependenciesToReleaseVersions) {
-          currentJobParameters(true)
-          parameters {
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Release plugin') {
-        phaseJob(mavenRelease) {
-          currentJobParameters(true)
-          parameters {
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-    }
-  }
-
-  freeStyleJob(mavenReleaseUpdateDependenciesToReleaseVersions) {
-    parameters {
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-      environmentVariables {
-        env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-      }
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    steps {
-      shell(makeMultiline([
-        'mvn versions:force-releases',
-        'if [ -z "$(git status -su -- pom.xml)" ]; then',
-        '  echo "==> No dependencies changed"',
-        'else',
-        '  echo "==> Committing dependency changes"',
-        '  git add pom.xml',
-        '  git commit -m "Update dependencies to release versions"',
-        '  git clean -xdf',
-        'fi'
-      ]))
-    }
-  }
-
-  freeStyleJob(mavenReleaseUpdateDependenciesToNextSnapshot) {
-    parameters {
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-      environmentVariables {
-        env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
-        env(MAVEN_RELEASE_VERSION_ENV_VAR, injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
-      }
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    steps {
-      shell(makeMultiline([
-        'mvn versions:update-parent versions:use-next-snapshots -Dinclude="cloud.cosmic.**" -DallowMinorUpdates -DallowSnapshots',
-        'if [ -z "$(git status -su)" ]; then',
-        '  echo "==> No dependencies changed"',
-        'else',
-        '  echo "==> Committing dependency changes"',
-        '  git add pom.xml',
-        '  git commit -m "Update parent and dependencies to next snapshot versions"',
-        '  git clean -xdf',
-        '  git push origin master',
-        'fi',
-        // Deploy so the dependent modules can fetch the latest snapshot.
-        'mvn deploy -Pdeveloper -Psystemvm'
-      ]))
-    }
-  }
-
   mavenJob(mavenSonarBuild) {
     parameters {
       credentialsParam(SONAR_RUNNER_PASSWORD_PARAM) {
@@ -1537,9 +761,6 @@ FOLDERS.each { folderName ->
       }
       stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
       stringParam(GIT_REPO_BRANCH_PARAM, 'sha1', 'Branch to be built')
-    }
-    environmentVariables {
-      env(GITHUB_OAUTH2_TOKEN_ENV_VAR, injectJobVariable(GITHUB_OAUTH2_CREDENTIAL_PARAM))
     }
     logRotator {
       numToKeep(50)
@@ -1563,113 +784,6 @@ FOLDERS.each { folderName ->
     goals("-Dsonar.branch=${injectJobVariable(GIT_REPO_BRANCH_PARAM)}-${isDevFolder ? 'DEV-' : ''}build")
   }
 
-  def pluginRepositories = isDevFolder ? getFakeRepos() : getPluginRepositories(ORGANIZATION_NAME, DEFAULT_GITHUB_USER_NAME);
-  // Pull request jobs for plugins
-  pluginRepositories.each { cosmicRepo ->
-    def targetBranch = injectJobVariable(GIT_REPO_BRANCH_PARAM)
-    def repoName = cosmicRepo.getName()
-    def githubRepository = "${ORGANIZATION_NAME}/" + repoName
-    def repoJobName =  "${folderName}/${String.format("%04d", job_name_counter++)}-plugin-pull-request-build-${repoName}"
-
-    // job to build cosmic a plugin
-    multiJob(repoJobName) {
-      parameters {
-        stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
-      }
-      concurrentBuild()
-      label(DEFAULT_EXECUTOR)
-      logRotator {
-        numToKeep(50)
-        artifactNumToKeep(10)
-      }
-      wrappers {
-        colorizeOutput('xterm')
-        timestamps()
-      }
-      scm {
-        git {
-          remote {
-            github(githubRepository, 'ssh')
-            credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-            name('origin')
-            refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
-          }
-          branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-          extensions {
-            cleanAfterCheckout()
-            cleanBeforeCheckout()
-            wipeOutWorkspace()
-          }
-        }
-      }
-      steps {
-        phase('Build maven project') {
-          phaseJob(mavenBuild) {
-            currentJobParameters(true)
-            parameters {
-              predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-              sameNode()
-              gitRevision(true)
-            }
-          }
-        }
-      }
-      if(!isDevFolder) {
-        publishers {
-          archiveJunit(makePatternList(MAVEN_REPORTS)) {
-            retainLongStdout(true)
-            testDataPublishers {
-                publishTestStabilityData()
-            }
-            allowEmptyResults(repoName.matches('cosmic-(client|checkstyle)'))
-          }
-          slackNotifications {
-            notifyBuildStart()
-            notifyAborted()
-            notifyFailure()
-            notifyNotBuilt()
-            notifyUnstable()
-            notifyBackToNormal()
-            includeTestSummary()
-            showCommitList()
-          }
-        }
-      }
-    }
-  }
-
-  listView(folderName + '/cosmic') {
-    description('Cosmic build and release jobs.')
-    jobs {
-      name(cosmicMasterBuild)
-      name(cosmicPullRequestBuild)
-      name(cosmicReleaseBuild)
-    }
-    columns {
-      status()
-      weather()
-      name()
-      lastSuccess()
-      lastFailure()
-      lastDuration()
-      buildButton()
-    }
-  }
-}
-
-def getPluginRepositories(githubOrganizatioName, githubUserName) {
-  def githubCredentials = CredentialsProvider.lookupCredentials(
-    StandardCredentials.class,
-    Jenkins.instance
-  )
-  gitubUserCredentials = githubCredentials.find({ it.description.contains(githubUserName) && it.description.contains('OAuth2') })
-
-  def github = GitHub.connect(githubUserName, gitubUserCredentials.secret.getPlainText())
-
-  def organization = github.getOrganization(githubOrganizatioName);
-  def repos = organization.listRepositories().toList();
-
-  return repos.findAll { it.getName().startsWith('cosmic-') }
 }
 
 def injectJobVariable(variableName) {
@@ -1699,18 +813,4 @@ def flattenLines(lines) {
 def subArray(array) {
   def endIndex = array.size() > 1 ? 1 : 0
   return array[0..endIndex]
-}
-
-def getFakeRepos() { return [ new FakeRepo('cosmic-client'), new FakeRepo('cosmic-core') ] }
-
-// used for testing in order to avoind calling github api all the time
-class FakeRepo {
-
-  private String name;
-
-  public FakeRepo(String name) {
-    this.name = name;
-  }
-
-  public String getName() { return name }
 }

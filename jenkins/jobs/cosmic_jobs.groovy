@@ -126,6 +126,10 @@ FOLDERS.each { folderName ->
   def trackingRepoPullRequestBuild                    = "${folderName}/0003-tracking-repo-pull-request-build"
   def trackingRepoReleaseBuild                        = "${folderName}/0004-tracking-repo-release-build"
 
+  def cosmicMasterBuild                               = "0005-cosmic-master-build"
+  def cosmicPullRequestBuild                          = "0006-cosmic-pull-request-build"
+  def cosmicReleaseBuild                              = "0007-cosmic-release-build"
+
   def job_name_counter = 5 // this will be used to index plugin pr jobs, it should follow from the last number in the above line
 
   def trackingRepoBuild                               = "${folderName}/0020-tracking-repo-build"
@@ -218,6 +222,197 @@ FOLDERS.each { folderName ->
     }
   }
 
+  multiJob("${folderName}/" + cosmicMasterBuild) {
+    parameters {
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
+    }
+    label(executorLabelMct)
+    concurrentBuild()
+    throttleConcurrentBuilds {
+      categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
+    }
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(20)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    triggers {
+      if (!isDevFolder) {
+        githubPush()
+      }
+    }
+    scm {
+      git {
+        remote {
+          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
+          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+          name('origin')
+          refspec('+refs/heads/master')
+        }
+        branch('master')
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+          wipeOutWorkspace()
+        }
+      }
+    }
+    steps {
+      phase('Full Build') {
+        phaseJob(trackingRepoBuild) {
+          parameters {
+            sameNode()
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
+            gitRevision(true)
+          }
+        }
+      }
+    }
+    publishers {
+      archiveArtifacts {
+        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
+        onlyIfSuccessful()
+      }
+      archiveJunit(makePatternList(XUNIT_REPORTS)) {
+        retainLongStdout()
+        testDataPublishers {
+          publishTestStabilityData()
+        }
+      }
+      if(!isDevFolder) {
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
+        }
+      }
+    }
+  }
+
+  multiJob("${folderName}/" + cosmicPullRequestBuild) {
+    parameters {
+      stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
+      textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
+    }
+    concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    label(executorLabelMct)
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    triggers {
+      if(!isDevFolder) {
+        pullRequest {
+          extensions {
+            triggerPhrase('go build')
+            permitAll()
+            useGitHubHooks()
+            commitStatus {
+              context(DEFAULT_GITHUB_JOB_LABEL)
+              startedStatus('building...')
+              completedStatus('SUCCESS', 'All is well')
+              completedStatus('FAILURE', 'Something went wrong. Investigate!')
+            }
+          }
+        }
+      }
+    }
+    scm {
+      git {
+        remote {
+          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
+          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+          name('origin')
+          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
+        }
+        branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+          wipeOutWorkspace()
+        }
+      }
+    }
+    steps {
+      phase('Full Build') {
+        phaseJob(trackingRepoBuild) {
+          parameters {
+            sameNode()
+            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
+            gitRevision(true)
+          }
+        }
+      }
+    }
+    publishers {
+      archiveJunit(makePatternList(MAVEN_REPORTS)) {
+        retainLongStdout()
+        testDataPublishers {
+          publishTestStabilityData()
+        }
+      }
+    }
+  }
+
+  mavenJob("${folderName}/" + cosmicReleaseBuild) {
+    parameters {
+      stringParam(MAVEN_RELEASE_VERSION_PARAM, "", 'Release version')
+    }
+    concurrentBuild()
+    throttleConcurrentBuilds {
+      maxPerNode(1)
+    }
+    label(executorLabelMct)
+    logRotator {
+      numToKeep(50)
+      artifactNumToKeep(10)
+    }
+    wrappers {
+      colorizeOutput('xterm')
+      timestamps()
+    }
+    scm {
+      git {
+        remote {
+          github(COSMIC_GITHUB_REPOSITORY, 'ssh')
+          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+          name('origin')
+          refspec('+refs/pull/*:refs/remotes/origin/pr/* +refs/heads/*:refs/remotes/origin/*')
+        }
+        branch("master")
+        extensions {
+          cleanAfterCheckout()
+          cleanBeforeCheckout()
+          wipeOutWorkspace()
+        }
+      }
+    }
+    preBuildSteps {
+      shell("git checkout master")
+    }
+    goals("release:prepare release:perform -Psystemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM))
+  }
+
+
+
   if(!isDevFolder) {
     freeStyleJob(trackingRepoUpdate) {
       parameters {
@@ -235,11 +430,6 @@ FOLDERS.each { folderName ->
       wrappers {
         colorizeOutput('xterm')
         timestamps()
-      }
-      triggers {
-        if (!isDevFolder) {
-          cron('H/15 * * * *')
-        }
       }
       scm {
         git {
@@ -291,11 +481,6 @@ FOLDERS.each { folderName ->
     wrappers {
       colorizeOutput('xterm')
       timestamps()
-    }
-    triggers {
-      if (!isDevFolder) {
-        githubPush()
-      }
     }
     scm {
       git {
@@ -371,11 +556,6 @@ FOLDERS.each { folderName ->
     wrappers {
       colorizeOutput('xterm')
       timestamps()
-    }
-    triggers {
-      if (!isDevFolder) {
-        githubPush()
-      }
     }
     scm {
       git {
@@ -880,23 +1060,6 @@ FOLDERS.each { folderName ->
         }
         recursiveSubmodules(true)
         trackingSubmodules(true)
-      }
-    }
-    triggers {
-      if(!isDevFolder) {
-        pullRequest {
-          extensions {
-            triggerPhrase('go build')
-            permitAll()
-            useGitHubHooks()
-            commitStatus {
-              context(DEFAULT_GITHUB_JOB_LABEL)
-              startedStatus('building...')
-              completedStatus('SUCCESS', 'All is well')
-              completedStatus('FAILURE', 'Something went wrong. Investigate!')
-            }
-          }
-        }
       }
     }
     steps {
@@ -1439,23 +1602,6 @@ FOLDERS.each { folderName ->
           }
         }
       }
-      triggers {
-        if(!isDevFolder) {
-          pullRequest {
-            extensions {
-              triggerPhrase('go build')
-              permitAll()
-              useGitHubHooks()
-              commitStatus {
-                context(DEFAULT_GITHUB_JOB_LABEL)
-                startedStatus('building...')
-                completedStatus('SUCCESS', 'All is well')
-                completedStatus('FAILURE', 'Something went wrong. Investigate!')
-              }
-            }
-          }
-        }
-      }
       steps {
         phase('Build maven project') {
           phaseJob(mavenBuild) {
@@ -1489,6 +1635,24 @@ FOLDERS.each { folderName ->
           }
         }
       }
+    }
+  }
+
+  listView(folderName + '/cosmic') {
+    description('Cosmic build and release jobs.')
+    jobs {
+      name(cosmicMasterBuild)
+      name(cosmicPullRequestBuild)
+      name(cosmicReleaseBuild)
+    }
+    columns {
+      status()
+      weather()
+      name()
+      lastSuccess()
+      lastFailure()
+      lastDuration()
+      buildButton()
     }
   }
 }

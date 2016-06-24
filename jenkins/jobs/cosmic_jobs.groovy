@@ -378,7 +378,7 @@ FOLDERS.each { folderName ->
     preBuildSteps {
       shell("git checkout master")
     }
-    goals("release:prepare release:perform -Psystemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM) + " " + isDevFolder ? MAVEN_RELEASE_NO_PUSH : "")
+    goals("release:prepare release:perform -Psystemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM) + " " + (isDevFolder ? MAVEN_RELEASE_NO_PUSH : ""))
   }
 
 

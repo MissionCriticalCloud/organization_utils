@@ -250,18 +250,18 @@ FOLDERS.each { folderName ->
         }
       }
     }
-    publishers {
-      archiveArtifacts {
-        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-        onlyIfSuccessful()
-      }
-      archiveJunit(makePatternList(XUNIT_REPORTS)) {
-        retainLongStdout()
-        testDataPublishers {
-          publishTestStabilityData()
+    if(!isDevFolder) {
+      publishers {
+        archiveArtifacts {
+          pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
+          onlyIfSuccessful()
         }
-      }
-      if(!isDevFolder) {
+        archiveJunit(makePatternList(XUNIT_REPORTS)) {
+          retainLongStdout()
+          testDataPublishers {
+            publishTestStabilityData()
+          }
+        }
         slackNotifications {
           notifyBuildStart()
           notifyAborted()
@@ -338,11 +338,23 @@ FOLDERS.each { folderName ->
         }
       }
     }
-    publishers {
-      archiveJunit(makePatternList(XUNIT_REPORTS)) {
-        retainLongStdout()
-        testDataPublishers {
-          publishTestStabilityData()
+    if(!isDevFolder) {
+      publishers {
+        archiveJunit(makePatternList(XUNIT_REPORTS)) {
+          retainLongStdout()
+          testDataPublishers {
+            publishTestStabilityData()
+          }
+        }
+        slackNotifications {
+          notifyBuildStart()
+          notifyAborted()
+          notifyFailure()
+          notifyNotBuilt()
+          notifyUnstable()
+          notifyBackToNormal()
+          includeTestSummary()
+          showCommitList()
         }
       }
     }

@@ -331,6 +331,7 @@ FOLDERS.each { folderName ->
           parameters {
             sameNode()
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_REPO_BRANCH_PARAM))
             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
             gitRevision(true)
           }
@@ -378,7 +379,7 @@ FOLDERS.each { folderName ->
     preBuildSteps {
       shell("git checkout master")
     }
-    goals("release:prepare release:perform -Psystemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM) + " " + (isDevFolder ? MAVEN_RELEASE_NO_PUSH : ""))
+    goals("release:prepare release:perform -Pdeveloper,systemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM) + " " + (isDevFolder ? MAVEN_RELEASE_NO_PUSH : ""))
   }
 
 

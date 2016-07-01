@@ -1,5 +1,3 @@
-import com.cloudbees.plugins.credentials.CredentialsProvider
-import com.cloudbees.plugins.credentials.common.StandardCredentials
 import jenkins.model.Jenkins
 
 def DEFAULT_GIT_REPO_BRANCH = 'remotes/origin/pr/*/head'

@@ -2,9 +2,9 @@ import jenkins.model.Jenkins
 
 def DEFAULT_GIT_REPO_BRANCH = 'remotes/origin/pr/*/head'
 
-def GIT_REPO_BRANCH_PARAM    = 'branch'
-def CUSTOM_WORKSPACE_PARAM   = 'CUSTOM_WORKSPACE'
-def COSMIC_DIRECTORY_PARAM   = 'COSMIC_DIRECTORY'
+def GIT_REPO_BRANCH_PARAM  = 'branch'
+def CUSTOM_WORKSPACE_PARAM = 'CUSTOM_WORKSPACE'
+def COSMIC_DIRECTORY_PARAM = 'COSMIC_DIRECTORY'
 
 def WORKSPACE_VAR = '${WORKSPACE}'
 
@@ -329,7 +329,7 @@ FOLDERS.each { folderName ->
           parameters {
             sameNode()
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_REPO_BRANCH_PARAM))
+            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
             gitRevision(true)
           }

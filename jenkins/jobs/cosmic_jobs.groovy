@@ -43,7 +43,7 @@ def MCCD_JENKINS_GITHUB_CREDENTIALS       = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105d
 def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4dfc'
 def SONAR_RUNNER_PASSOWRD_CREDENTIALS     = 'df77a17c-5613-4fdf-8c49-52789b613e51'
 
-def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-kvm1-kvm2.cfg'
+def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg'
 
 def MAVEN_REPORTS = [
   '**/target/surefire-reports/*.xml'
@@ -474,7 +474,7 @@ FOLDERS.each { folderName ->
       shell('mkdir -p MarvinLogs')
       shell('mv cosmic-core/test/integration/runinfo.txt MarvinLogs/tests_runinfo.txt')
       shell('mv cosmic-core/test/integration/failed_plus_exceptions.txt MarvinLogs/tests_failed_plus_exceptions.txt')
-      shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh")
+      shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh -m /data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg")
       phase('Sonar analysis') {
         phaseJob(mavenSonarBuild) {
           currentJobParameters(true)
@@ -578,7 +578,7 @@ FOLDERS.each { folderName ->
     }
     steps {
       shell('rm -rf ./*')
-      shell("${shellPrefix} /data/shared/ci/ci-cleanup.sh -m /data/shared/marvin/mct-zone1-kvm1-kvm2.cfg")
+      shell("${shellPrefix} /data/shared/ci/ci-cleanup.sh -m /data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg")
     }
     publishers {
       archiveArtifacts {

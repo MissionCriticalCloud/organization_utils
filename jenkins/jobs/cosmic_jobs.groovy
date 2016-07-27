@@ -30,7 +30,7 @@ def DEFAULT_GITHUB_JOB_LABEL = 'mccd jenkins build'
 
 def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4dfc'
-def SONAR_RUNNER_PASSOWRD_CREDENTIALS = 'df77a17c-5613-4fdf-8c49-52789b613e51'
+def SONAR_RUNNER_PASSWORD_CREDENTIALS = 'df77a17c-5613-4fdf-8c49-52789b613e51'
 
 def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg'
 
@@ -674,7 +674,7 @@ FOLDERS.each { folderName ->
             credentialsParam(SONAR_RUNNER_PASSWORD_PARAM) {
                 type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
                 required()
-                defaultValue(SONAR_RUNNER_PASSOWRD_CREDENTIALS)
+                defaultValue(SONAR_RUNNER_PASSWORD_CREDENTIALS)
                 description('sonar-runner user credentials')
             }
             stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')

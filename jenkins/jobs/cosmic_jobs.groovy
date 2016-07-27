@@ -371,7 +371,8 @@ FOLDERS.each { folderName ->
             preBuildSteps {
                 shell("git checkout master")
             }
-            goals("release:prepare release:perform -Pdeveloper,systemvm -DreleaseVersion=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM) + " " + (isDevFolder ? MAVEN_RELEASE_NO_PUSH : ""))
+            mavenOpts(MAVEN_OPTIONS_RELEASE_JOB)
+            goals("release:prepare release:perform -Pdeveloper,systemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
         }
 
         // Build for a branch of cosmic

@@ -13,7 +13,6 @@ def ORGANIZATION_REPO_NAME           = 'organization_utils'
 def ORGANIZATION_NAME                = 'MissionCriticalCloud'
 def ORG_UTILS_GITHUB_REPOSITORY      = "${ORGANIZATION_NAME}/${ORGANIZATION_REPO_NAME}"
 def COSMIC_GITHUB_REPOSITORY         = "${ORGANIZATION_NAME}/cosmic"
-def PACKAGING_GITHUB_REPOSITORY      = "${ORGANIZATION_NAME}/packaging"
 def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
 def GITHUB_REPOSITORY_NAME_PARAM      = 'githubRepository'
@@ -61,10 +60,6 @@ def MARVIN_DEPLOY_DC_LOGS = [
 
 def XUNIT_REPORTS = MARVIN_REPORTS + MAVEN_REPORTS
 
-def COSMIC_PACKAGING_ARTEFACTS = [
-  'dist/rpmbuild/RPMS/x86_64/cosmic-*.rpm'
-]
-
 def COSMIC_TEST_ARTEFACTS = [
   'MarvinLogs/'
 ] + MARVIN_REPORTS
@@ -87,7 +82,7 @@ def COSMIC_BUILD_ARTEFACTS = [
   'cosmic-plugin-hypervisor-kvm/target/*.jar',
   'cosmic-plugin-hypervisor-ovm3/target/*.jar',
   'cosmic-plugin-hypervisor-xenserver/target/*.jar'
-] + COSMIC_PACKAGING_ARTEFACTS + COSMIC_TEST_ARTEFACTS + CLEAN_UP_JOB_ARTIFACTS
+] + COSMIC_TEST_ARTEFACTS + CLEAN_UP_JOB_ARTIFACTS
 
 def COSMIC_TESTS_WITH_HARDWARE = [
   'smoke/test_network.py',
@@ -122,8 +117,6 @@ FOLDERS.each { folderName ->
   def cosmicReleaseBuild      = "0003-cosmic-release-build"
 
   def fullBuild                           = "${folderName}/0020-full-build"
-  def compileAndPackageJob                = "${folderName}/0100-full-build-and-package"
-  def packageCosmicJob                    = "${folderName}/1000-rpm-package"
   def prepareInfraForIntegrationTests     = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
   def setupInfraForIntegrationTests       = "${folderName}/0300-setup-infrastructure-for-integration-tests"
   def deployDatacenterForIntegrationTests = "${folderName}/0400-deploy-datacenter-for-integration-tests"
@@ -416,7 +409,7 @@ FOLDERS.each { folderName ->
     }
     steps {
       phase('Build maven project and prepare infrastructure for integrations tests') {
-        phaseJob(compileAndPackageJob) {
+        phaseJob(mavenBuild) {
           currentJobParameters(true)
           parameters {
             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
@@ -505,63 +498,6 @@ FOLDERS.each { folderName ->
     }
   }
 
-  // Job that builds with maven and packaging scripts
-  multiJob(compileAndPackageJob) {
-    parameters {
-      credentialsParam(GITHUB_OAUTH2_CREDENTIAL_PARAM) {
-        type('org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl')
-        required()
-        defaultValue(MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS)
-        description('mccd jenkins OAuth2 token credential')
-      }
-      stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-    }
-    customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    steps {
-      phase('Build maven project') {
-        phaseJob(mavenBuild) {
-          currentJobParameters(true)
-          parameters {
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      phase('Package artefacts') {
-        phaseJob(packageCosmicJob) {
-          currentJobParameters(true)
-          parameters {
-            predefinedProp(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR)
-            sameNode()
-            gitRevision(true)
-          }
-        }
-      }
-      copyArtifacts(packageCosmicJob) {
-        includePatterns(makePatternList(COSMIC_PACKAGING_ARTEFACTS))
-        fingerprintArtifacts(true)
-        buildSelector {
-          multiJobBuild()
-        }
-      }
-    }
-    publishers {
-      archiveArtifacts {
-        pattern(makePatternList(COSMIC_BUILD_ARTEFACTS))
-        onlyIfSuccessful()
-      }
-    }
-  }
-
   freeStyleJob(collectArtifactsAndCleanup) {
     label(executorLabelMct)
     concurrentBuild()
@@ -587,43 +523,6 @@ FOLDERS.each { folderName ->
     }
   }
 
-  freeStyleJob(packageCosmicJob) {
-    parameters {
-      stringParam(COSMIC_DIRECTORY_PARAM, WORKSPACE_VAR, 'A directory with the cosmic sources and artefacts to use for the job')
-    }
-    logRotator {
-      numToKeep(50)
-      artifactNumToKeep(10)
-    }
-    concurrentBuild()
-    wrappers {
-      colorizeOutput('xterm')
-      timestamps()
-    }
-    scm {
-      git {
-        remote {
-          github(PACKAGING_GITHUB_REPOSITORY, 'ssh' )
-          credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
-        }
-        branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
-        shallowClone(true)
-        extensions {
-          cleanAfterCheckout()
-          cleanBeforeCheckout()
-        }
-      }
-    }
-    steps {
-      shell("${shellPrefix} ./package_cosmic.sh  -d centos7 -f ${injectJobVariable(COSMIC_DIRECTORY_PARAM)}")
-    }
-    publishers {
-      archiveArtifacts {
-        pattern(makePatternList(COSMIC_PACKAGING_ARTEFACTS))
-        onlyIfSuccessful()
-      }
-    }
-  }
 
   // Job that prepares the infrastructure for the cosmic integration tests
   freeStyleJob(prepareInfraForIntegrationTests) {

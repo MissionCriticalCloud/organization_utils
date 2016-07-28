@@ -252,6 +252,7 @@ FOLDERS.each { folderName ->
                         includeTestSummary()
                         showCommitList()
                     }
+                    githubCommitNotifier()
                 }
             }
         }

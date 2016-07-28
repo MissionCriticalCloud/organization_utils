@@ -696,6 +696,7 @@ FOLDERS.each { folderName ->
         }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
         archivingDisabled(true)
+        goals('org.jacoco:jacoco-maven-plugin:merge@merge-integration-test-coverage')
         goals('sonar:sonar')
         goals('-Psonar-ci-cosmic')
         goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")

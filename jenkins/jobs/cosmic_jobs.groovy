@@ -345,7 +345,7 @@ FOLDERS.each { folderName ->
                 stringParam(MAVEN_RELEASE_VERSION_PARAM, "", 'Release version')
             }
             concurrentBuild(false)
-            label(DEFAULT_EXECUTOR)
+            label(executorLabelMct)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)

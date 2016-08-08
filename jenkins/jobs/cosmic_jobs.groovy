@@ -1,8 +1,5 @@
-def DEFAULT_GIT_REPO_BRANCH = 'remotes/origin/pr/*/head'
-
 def GIT_REPO_BRANCH_PARAM = 'branch'
 def CUSTOM_WORKSPACE_PARAM = 'CUSTOM_WORKSPACE'
-def COSMIC_DIRECTORY_PARAM = 'COSMIC_DIRECTORY'
 
 def WORKSPACE_VAR = '${WORKSPACE}'
 
@@ -33,6 +30,9 @@ def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4df
 def SONAR_RUNNER_PASSWORD_CREDENTIALS = 'df77a17c-5613-4fdf-8c49-52789b613e51'
 
 def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg'
+
+def MANAGEMENT_SERVER_LOG_FILE = '/var/log/cosmic/management/management.log'
+def MANAGEMENT_SERVER_LOG_ROTATION = '/var/log/cosmic/management/management-%d{yyyy-MM-dd}.log.gz'
 
 def MAVEN_REPORTS = [
         '**/target/surefire-reports/*.xml'
@@ -669,6 +669,8 @@ FOLDERS.each { folderName ->
         goals('-Psystemvm')
         goals('-Psonar-ci-cosmic')
         goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+        goals("-Dlog.file.management.server=\"${injectJobVariable(MANAGEMENT_SERVER_LOG_FILE)}\"")
+        goals("-Dlog.rotation.management.server=\"${injectJobVariable(MANAGEMENT_SERVER_LOG_ROTATION)}\"")
     }
 
     mavenJob(mavenSonarBuild) {

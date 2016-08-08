@@ -16,7 +16,6 @@ def TESTS_PARAM = 'tests'
 
 def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
 
-def MAVEN_OPTIONS_RELEASE_JOB = '-Xmx2048m -Xms2048m'
 def MAVEN_RELEASE_VERSION_PARAM = 'releaseVersion'
 def MAVEN_RELEASE_NO_PUSH = '-DpushChanges=false -DlocalCheckout=true'
 
@@ -346,7 +345,7 @@ FOLDERS.each { folderName ->
                 stringParam(MAVEN_RELEASE_VERSION_PARAM, "", 'Release version')
             }
             concurrentBuild(false)
-            label(DEFAULT_EXECUTOR)
+            label(executorLabelMct)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)
@@ -372,8 +371,7 @@ FOLDERS.each { folderName ->
             preBuildSteps {
                 shell("git checkout master")
             }
-            mavenOpts(MAVEN_OPTIONS_RELEASE_JOB)
-            goals("release:prepare release:perform -Pdeveloper,systemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
+            goals("release:prepare release:perform -Psystemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
         }
 
         // Build for a branch of cosmic
@@ -665,7 +663,6 @@ FOLDERS.each { folderName ->
             goals('deploy')
         }
         goals('-U')
-        goals('-Pdeveloper')
         goals('-Psystemvm')
         goals('-Psonar-ci-cosmic')
         goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")

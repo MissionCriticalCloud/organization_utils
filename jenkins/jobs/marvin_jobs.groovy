@@ -530,7 +530,6 @@ mavenJob(BUILD_COSMIC_JOB) {
     goals('clean')
     goals('package')
     goals('-T4')
-    goals('-Pdeveloper')
     goals('-Psystemvm')
 }
 

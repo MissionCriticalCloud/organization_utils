@@ -65,7 +65,6 @@ def COSMIC_BUILD_ARTEFACTS = [
         'cosmic-client/target/conf/',
         'cosmic-client/target/pythonlibs/',
         'cosmic-client/target/utilities/',
-        'cosmic-core/developer/developer-prefill.sql',
         'cosmic-core/test/integration/',
         'cosmic-core/**/target/*.jar',
         'cosmic-plugin-hypervisor-kvm/target/*.jar',

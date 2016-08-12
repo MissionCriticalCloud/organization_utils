@@ -39,7 +39,7 @@ def BETA_NEXUS_RELEASE_URL  = 'https://beta-nexus.mcc.schubergphilis.com/content
 
 def MCCD_JENKINS_GITHUB_CREDENTIALS       = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 
-def DEFAULT_EXECUTOR = 'executor'
+def DEFAULT_EXECUTOR = 'executor-mct'
 
 def RELEASE_VERSION_PARAM  = 'releaseVersion'
 

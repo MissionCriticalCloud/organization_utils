@@ -157,10 +157,12 @@ FOLDERS.each { folderName ->
                             github(ORG_UTILS_GITHUB_REPOSITORY, 'https')
                         }
                         branch(DEFAULT_GITHUB_REPOSITORY_BRANCH)
-                        shallowClone(true)
                         extensions {
                             cleanAfterCheckout()
                             cleanBeforeCheckout()
+                            cloneOptions {
+                                shallow(true)
+                            }
                         }
                         configure { node ->
                             node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
@@ -279,11 +281,11 @@ FOLDERS.each { folderName ->
             }
             triggers {
                 if (!isDevFolder) {
-                    pullRequest {
+                    githubPullRequest {
+                        triggerPhrase('go build')
+                        useGitHubHooks()
+                        permitAll()
                         extensions {
-                            triggerPhrase('go build')
-                            permitAll()
-                            useGitHubHooks()
                             commitStatus {
                                 context(DEFAULT_GITHUB_JOB_LABEL)
                                 startedStatus('building...')

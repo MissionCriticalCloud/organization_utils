@@ -19,6 +19,8 @@ def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
 def MAVEN_RELEASE_VERSION_PARAM = 'releaseVersion'
 def MAVEN_RELEASE_NO_PUSH = '-DpushChanges=false -DlocalCheckout=true'
 
+def MAVEN_SNAPSHOT_VERSION_PARAM = 'snapshotVersion'
+
 def GIT_BRANCH_ENV_VARIABLE_NAME = 'GIT_BRANCH'
 def GIT_PR_BRANCH_ENV_VARIABLE_NAME = 'ghprbActualCommit'
 
@@ -103,6 +105,7 @@ FOLDERS.each { folderName ->
     def cosmicMasterBuild = "0001-cosmic-master-build"
     def cosmicPullRequestBuild = "0002-cosmic-pull-request-build"
     def cosmicReleaseBuild = "0003-cosmic-release-build"
+    def cosmicSnapshotBuild = "0004-cosmic-snapshot-build"
 
     def fullBuild = "${folderName}/0020-full-build"
     def prepareInfraForIntegrationTests = "${folderName}/0200-prepare-infrastructure-for-integration-tests"
@@ -128,6 +131,7 @@ FOLDERS.each { folderName ->
             name(cosmicMasterBuild)
             name(cosmicPullRequestBuild)
             name(cosmicReleaseBuild)
+            name(cosmicSnapshotBuild)
         }
         columns {
             status()
@@ -371,6 +375,45 @@ FOLDERS.each { folderName ->
                 shell("git checkout master")
             }
             goals("release:prepare release:perform -Psystemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
+        }
+
+        mavenJob("${folderName}/" + cosmicSnapshotBuild) {
+            parameters {
+                stringParam(MAVEN_SNAPSHOT_VERSION_PARAM, "", 'Snapshot version, include \'-SNAPSHOT\' in the version string. Example: 6.0.0.0-SNAPSHOT')
+            }
+            concurrentBuild(false)
+            label(executorLabelMct)
+            logRotator {
+                numToKeep(50)
+                artifactNumToKeep(10)
+            }
+            wrappers {
+                colorizeOutput('xterm')
+                timestamps()
+            }
+            scm {
+                git {
+                    remote {
+                        github(COSMIC_GITHUB_REPOSITORY, 'ssh')
+                        credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
+                        name('origin')
+                        refspec('+refs/heads/*:refs/remotes/origin/*')
+                    }
+                    branch("master")
+                    extensions {
+                        wipeOutWorkspace()
+                    }
+                }
+            }
+            preBuildSteps {
+                shell("git checkout master")
+            }
+            goals("release:update-versions --batch-mode -DdevelopmentVersion=${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}")
+            postBuildSteps {
+                shell("git add .")
+                shell("git commit -m \"Update SNAPSHOT version to ${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}\"")
+                shell("git push origin HEAD:master")
+            }
         }
 
         // Build for a branch of cosmic

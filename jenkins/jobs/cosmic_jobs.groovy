@@ -410,7 +410,7 @@ FOLDERS.each { folderName ->
             preBuildSteps {
                 shell("git checkout master")
             }
-            goals("release:update-versions --batch-mode -DdevelopmentVersion=${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}")
+            goals("release:update-versions --batch-mode -DdevelopmentVersion=${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)} -Psystemvm")
             postBuildSteps {
                 shell("git add .")
                 shell("git commit -m \"Update SNAPSHOT version to ${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}\"")

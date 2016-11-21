@@ -163,6 +163,7 @@ FOLDERS.each { folderName ->
                             cloneOptions {
                                 shallow(true)
                             }
+                            wipeOutWorkspace()
                         }
                         configure { node ->
                             node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {

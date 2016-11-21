@@ -45,6 +45,7 @@ freeStyleJob(SEED_JOB) {
                     shallow(true)
                 }
             }
+            wipeOutWorkspace()
         }
     }
     triggers {
@@ -87,6 +88,7 @@ freeStyleJob(GITHUB_SLACK_INTEGRATION_JOB) {
                 cloneOptions {
                     shallow(true)
                 }
+                wipeOutWorkspace()
             }
         }
     }
@@ -133,6 +135,7 @@ freeStyleJob(GITHUB_JENKINS_INTEGRATION_JOB) {
                 cloneOptions {
                     shallow(true)
                 }
+                wipeOutWorkspace()
             }
         }
     }

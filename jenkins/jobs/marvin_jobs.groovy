@@ -37,6 +37,8 @@ def ORGANIZATION_UTILS_GITHUB_DEFAULT_BRANCH = 'master'
 def BETA_NEXUS_SNAPSHOT_URL = 'https://beta-nexus.mcc.schubergphilis.com/content/repositories/snapshots/'
 def BETA_NEXUS_RELEASE_URL = 'https://beta-nexus.mcc.schubergphilis.com/content/repositories/releases/'
 
+def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
+
 def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 
 def DEFAULT_EXECUTOR = 'executor-mct'
@@ -88,6 +90,7 @@ multiJob(MASTER_TRIGGER_MARVIN_JOB) {
     concurrentBuild()
     throttleConcurrentBuilds {
         maxPerNode(1)
+        categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
     logRotator {
         numToKeep(50)
@@ -136,6 +139,7 @@ multiJob(MASTER_TRIGGER_COSMIC_JOB) {
     concurrentBuild()
     throttleConcurrentBuilds {
         maxPerNode(1)
+        categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
     logRotator {
         numToKeep(50)
@@ -295,6 +299,7 @@ multiJob(RELEASE_JOB) {
     concurrentBuild()
     throttleConcurrentBuilds {
         maxPerNode(1)
+        categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
     logRotator {
         numToKeep(50)

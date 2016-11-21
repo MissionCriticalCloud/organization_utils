@@ -1,47 +1,47 @@
 def FOLDER_NAME = 'cosmic-marvin'
 
-def MASTER_TRIGGER_MARVIN_JOB   = "${FOLDER_NAME}/0000-master-build-trigger-marvin"
-def MASTER_TRIGGER_COSMIC_JOB   = "${FOLDER_NAME}/0001-master-build-trigger-cosmic"
-def RELEASE_JOB                 = "${FOLDER_NAME}/0008-release-build"
-def MARVIN_BUILD_JOB            = "${FOLDER_NAME}/0009-marvin-build-job"
-def CLEAN_WORKSPACE_JOB         = "${FOLDER_NAME}/0010-clean-workspace-job"
-def PULL_MARVIN_JOB             = "${FOLDER_NAME}/0020-pull-marvin-job"
-def PULL_COSMIC_JOB             = "${FOLDER_NAME}/0021-pull-cosmic-job"
-def BUILD_COSMIC_JOB            = "${FOLDER_NAME}/0022-build-cosmic-job"
-def BUMP_RELEASE_VERSION_JOB    = "${FOLDER_NAME}/0030-bump-release-version-job"
-def COMMIT_RELEASE_VERSION_JOB  = "${FOLDER_NAME}/0031-commit-release-version-job"
-def BUMP_SNAPSHOT_VERSION_JOB   = "${FOLDER_NAME}/0032-bump-snapshot-version-job"
+def MASTER_TRIGGER_MARVIN_JOB = "${FOLDER_NAME}/0000-master-build-trigger-marvin"
+def MASTER_TRIGGER_COSMIC_JOB = "${FOLDER_NAME}/0001-master-build-trigger-cosmic"
+def RELEASE_JOB = "${FOLDER_NAME}/0008-release-build"
+def MARVIN_BUILD_JOB = "${FOLDER_NAME}/0009-marvin-build-job"
+def CLEAN_WORKSPACE_JOB = "${FOLDER_NAME}/0010-clean-workspace-job"
+def PULL_MARVIN_JOB = "${FOLDER_NAME}/0020-pull-marvin-job"
+def PULL_COSMIC_JOB = "${FOLDER_NAME}/0021-pull-cosmic-job"
+def BUILD_COSMIC_JOB = "${FOLDER_NAME}/0022-build-cosmic-job"
+def BUMP_RELEASE_VERSION_JOB = "${FOLDER_NAME}/0030-bump-release-version-job"
+def COMMIT_RELEASE_VERSION_JOB = "${FOLDER_NAME}/0031-commit-release-version-job"
+def BUMP_SNAPSHOT_VERSION_JOB = "${FOLDER_NAME}/0032-bump-snapshot-version-job"
 def COMMIT_SNAPSHOT_VERSION_JOB = "${FOLDER_NAME}/0033-commit-snapshot-version-job"
-def BUILD_API_JOB               = "${FOLDER_NAME}/0040-build-api-job"
-def COMMIT_API_CHANGES_JOB      = "${FOLDER_NAME}/0041-commit-api-changes-job"
-def PYTHON_TESTS_JOB            = "${FOLDER_NAME}/0050-python-tests-job"
-def PYTHON_EGG_JOB              = "${FOLDER_NAME}/0051-python-egg-job"
-def PUSH_RELEASE_NEXUS_JOB      = "${FOLDER_NAME}/0060-push-release-nexus-job"
-def PUSH_SNAPSHOT_NEXUS_JOB     = "${FOLDER_NAME}/0061-push-snapshot-nexus-job"
-def SEED_JOB                    = "${FOLDER_NAME}/9991-seed-job"
+def BUILD_API_JOB = "${FOLDER_NAME}/0040-build-api-job"
+def COMMIT_API_CHANGES_JOB = "${FOLDER_NAME}/0041-commit-api-changes-job"
+def PYTHON_TESTS_JOB = "${FOLDER_NAME}/0050-python-tests-job"
+def PYTHON_EGG_JOB = "${FOLDER_NAME}/0051-python-egg-job"
+def PUSH_RELEASE_NEXUS_JOB = "${FOLDER_NAME}/0060-push-release-nexus-job"
+def PUSH_SNAPSHOT_NEXUS_JOB = "${FOLDER_NAME}/0061-push-snapshot-nexus-job"
+def SEED_JOB = "${FOLDER_NAME}/9991-seed-job"
 
 def GIT_REPO_BRANCH_PARAM = 'sha1'
 
 def CUSTOM_WORKSPACE_PARAM = 'CUSTOM_WORKSPACE'
-def WORKSPACE_VAR          = '${WORKSPACE}'
+def WORKSPACE_VAR = '${WORKSPACE}'
 
-def ORGANIZATION_NAME                        = 'MissionCriticalCloud'
-def MARVIN_REPOSITORY_NAME                   = 'marvin'
-def MARVIN_GITHUB_REPOSITORY                 = "${ORGANIZATION_NAME}/${MARVIN_REPOSITORY_NAME}"
-def COSMIC_REPOSITORY_NAME                   = 'cosmic'
-def COSMIC_GITHUB_REPOSITORY                 = "${ORGANIZATION_NAME}/${COSMIC_REPOSITORY_NAME}"
-def ORGANIZATION_UTILS_REPOSITORY_NAME       = 'organization_utils'
-def ORGANIZATION_UTILS_GITHUB_REPOSITORY     = "${ORGANIZATION_NAME}/${ORGANIZATION_UTILS_REPOSITORY_NAME}"
+def ORGANIZATION_NAME = 'MissionCriticalCloud'
+def MARVIN_REPOSITORY_NAME = 'marvin'
+def MARVIN_GITHUB_REPOSITORY = "${ORGANIZATION_NAME}/${MARVIN_REPOSITORY_NAME}"
+def COSMIC_REPOSITORY_NAME = 'cosmic'
+def COSMIC_GITHUB_REPOSITORY = "${ORGANIZATION_NAME}/${COSMIC_REPOSITORY_NAME}"
+def ORGANIZATION_UTILS_REPOSITORY_NAME = 'organization_utils'
+def ORGANIZATION_UTILS_GITHUB_REPOSITORY = "${ORGANIZATION_NAME}/${ORGANIZATION_UTILS_REPOSITORY_NAME}"
 def ORGANIZATION_UTILS_GITHUB_DEFAULT_BRANCH = 'master'
 
 def BETA_NEXUS_SNAPSHOT_URL = 'https://beta-nexus.mcc.schubergphilis.com/content/repositories/snapshots/'
-def BETA_NEXUS_RELEASE_URL  = 'https://beta-nexus.mcc.schubergphilis.com/content/repositories/releases/'
+def BETA_NEXUS_RELEASE_URL = 'https://beta-nexus.mcc.schubergphilis.com/content/repositories/releases/'
 
-def MCCD_JENKINS_GITHUB_CREDENTIALS       = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
+def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 
 def DEFAULT_EXECUTOR = 'executor-mct'
 
-def RELEASE_VERSION_PARAM  = 'releaseVersion'
+def RELEASE_VERSION_PARAM = 'releaseVersion'
 
 folder(FOLDER_NAME)
 
@@ -54,15 +54,20 @@ freeStyleJob(SEED_JOB) {
     scm {
         git {
             remote {
-                github(ORGANIZATION_UTILS_GITHUB_REPOSITORY, 'https' )
+                github(ORGANIZATION_UTILS_GITHUB_REPOSITORY, 'https')
             }
             branch(ORGANIZATION_UTILS_GITHUB_DEFAULT_BRANCH)
-            shallowClone(true)
-            clean(true)
             configure { node ->
                 node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
                     includedRegions 'jenkins/jobs/marvin_jobs[.]groovy'
                     excludedRegions ''
+                }
+            }
+            extensions {
+                cleanAfterCheckout()
+                cleanBeforeCheckout()
+                cloneOptions {
+                    shallow(true)
                 }
             }
         }
@@ -153,10 +158,12 @@ multiJob(MASTER_TRIGGER_COSMIC_JOB) {
             extensions {
                 cleanAfterCheckout()
                 cleanBeforeCheckout()
+                submoduleOptions {
+                    recursive(true)
+                    tracking(false)
+                }
                 wipeOutWorkspace()
             }
-            recursiveSubmodules(true)
-            trackingSubmodules(false)
             branch('master')
         }
     }
@@ -466,7 +473,7 @@ freeStyleJob(PULL_MARVIN_JOB) {
     scm {
         git {
             remote {
-                github(MARVIN_GITHUB_REPOSITORY, 'ssh' )
+                github(MARVIN_GITHUB_REPOSITORY, 'ssh')
                 credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
             }
             branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
@@ -498,13 +505,19 @@ freeStyleJob(PULL_COSMIC_JOB) {
     scm {
         git {
             remote {
-                github(COSMIC_GITHUB_REPOSITORY, 'ssh' )
+                github(COSMIC_GITHUB_REPOSITORY, 'ssh')
                 credentials(MCCD_JENKINS_GITHUB_CREDENTIALS)
             }
             branch(injectJobVariable(GIT_REPO_BRANCH_PARAM))
-            shallowClone(false)
-            recursiveSubmodules(true)
-            trackingSubmodules(true)
+            extensions {
+                cloneOptions {
+                    shallow(false)
+                }
+                submoduleOptions {
+                    recursive(true)
+                    tracking(true)
+                }
+            }
         }
     }
     steps {

@@ -44,8 +44,8 @@ freeStyleJob(SEED_JOB) {
                 cloneOptions {
                     shallow(true)
                 }
+                wipeOutWorkspace()
             }
-            wipeOutWorkspace()
         }
     }
     triggers {

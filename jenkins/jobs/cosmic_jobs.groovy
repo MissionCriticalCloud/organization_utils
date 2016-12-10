@@ -711,8 +711,8 @@ FOLDERS.each { folderName ->
         goals('-Psystemvm')
         goals('-Psonar-ci-cosmic')
         goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
-        goals("-Dlog.file.management.server=\"${injectJobVariable(MANAGEMENT_SERVER_LOG_FILE)}\"")
-        goals("-Dlog.rotation.management.server=\"${injectJobVariable(MANAGEMENT_SERVER_LOG_ROTATION)}\"")
+        goals("-Dlog.file.management.server=\"${MANAGEMENT_SERVER_LOG_FILE}\"")
+        goals("-Dlog.rotation.management.server=\"${MANAGEMENT_SERVER_LOG_ROTATION}\"")
     }
 
     mavenJob(mavenSonarBuild) {

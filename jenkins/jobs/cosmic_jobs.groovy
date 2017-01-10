@@ -31,6 +31,7 @@ def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4df
 def SONAR_RUNNER_PASSWORD_CREDENTIALS = 'df77a17c-5613-4fdf-8c49-52789b613e51'
 
 def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg'
+def MARVIN_VERSION_FILE = 'cosmic-marvin/setup.py'
 
 def MANAGEMENT_SERVER_LOG_FILE = '/var/log/cosmic/management/management.log'
 def MANAGEMENT_SERVER_LOG_ROTATION = '/var/log/cosmic/management/management-%d{yyyy-MM-dd}.log.gz'
@@ -376,6 +377,8 @@ FOLDERS.each { folderName ->
             }
             preBuildSteps {
                 shell("git checkout master")
+                shell("sed -i \"s/VERSION = .*/VERSION = '${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)}'/g\" ${MARVIN_VERSION_FILE}")
+                shell("git add ${MARVIN_VERSION_FILE}")
             }
             goals("release:prepare release:perform -Psystemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
         }
@@ -413,6 +416,7 @@ FOLDERS.each { folderName ->
             }
             goals("release:update-versions --batch-mode -DdevelopmentVersion=${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)} -Psystemvm")
             postBuildSteps {
+                shell("sed -i \"s/VERSION = .*/VERSION = '${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}'/g\" ${MARVIN_VERSION_FILE}")
                 shell("git add .")
                 shell("git commit -m \"Update SNAPSHOT version to ${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}\"")
                 shell("git push origin HEAD:master")

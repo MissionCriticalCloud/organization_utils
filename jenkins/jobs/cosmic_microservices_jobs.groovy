@@ -116,7 +116,7 @@ FOLDERS.each { folderName ->
                         }
                         configure { node ->
                             node / 'extensions' << 'hudson.plugins.git.extensions.impl.PathRestriction' {
-                                includedRegions 'jenkins/jobs/cosmic-microservices_jobs[.]groovy'
+                                includedRegions 'jenkins/jobs/cosmic_microservices_jobs[.]groovy'
                                 excludedRegions ''
                             }
                         }

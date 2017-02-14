@@ -27,7 +27,8 @@ def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4dfc'
 
 def MAVEN_REPORTS = [
-        '**/target/surefire-reports/*.xml'
+        '**/target/surefire-reports/*.xml',
+        '**/target/failsafe-reports/*.xml'
 ]
 
 def MARVIN_REPORTS = [

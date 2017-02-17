@@ -132,7 +132,7 @@ FOLDERS.each { folderName ->
             steps {
                 dsl {
                     if (!isDevFolder) {
-                        external('jenkins/jobs/cosmic-microservices_jobs.groovy')
+                        external('jenkins/jobs/cosmic_microservices_jobs.groovy')
                     }
                 }
             }

@@ -10,6 +10,7 @@ def COSMIC_GITHUB_REPOSITORY = "${ORGANIZATION_NAME}/cosmic-microservices"
 def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
 def GITHUB_OAUTH2_CREDENTIAL_PARAM = 'mccdJenkinsOauth2'
+def SONAR_RUNNER_PASSWORD_PARAM = 'sonarRunnerPassword'
 
 def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-microservices-jobs'
 
@@ -25,6 +26,7 @@ def DEFAULT_GITHUB_JOB_LABEL = 'mccd jenkins build'
 
 def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4dfc'
+def SONAR_RUNNER_PASSWORD_CREDENTIALS = 'df77a17c-5613-4fdf-8c49-52789b613e51'
 
 def MAVEN_REPORTS = [
         '**/target/surefire-reports/*.xml',
@@ -65,6 +67,7 @@ FOLDERS.each { folderName ->
 
     def fullBuild = "${folderName}/0020-full-build"
     def mavenBuild = "${folderName}/9997-maven-build"
+    def mavenSonarBuild = "${folderName}/9998-maven-sonar-build"
     def seedJob = "${folderName}/9999-seed-job"
 
     def isDevFolder = folderName.endsWith('-dev')
@@ -393,6 +396,17 @@ FOLDERS.each { folderName ->
                         }
                     }
                 }
+                phase('Sonar analysis') {
+                    phaseJob(mavenSonarBuild) {
+                        currentJobParameters(true)
+                        parameters {
+                            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_REPO_BRANCH_PARAM))
+                            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+                            sameNode()
+                            gitRevision(true)
+                        }
+                    }
+                }
             }
         }
     }
@@ -427,6 +441,42 @@ FOLDERS.each { folderName ->
 //            goals('deploy')
 //        }
         goals('-U')
+        goals('-Psonar-ci-cosmic-microservices')
+        goals("-Dcosmic-microservices.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+    }
+
+    mavenJob(mavenSonarBuild) {
+        parameters {
+            credentialsParam(SONAR_RUNNER_PASSWORD_PARAM) {
+                type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
+                required()
+                defaultValue(SONAR_RUNNER_PASSWORD_CREDENTIALS)
+                description('sonar-runner user credentials')
+            }
+            stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+            stringParam(GIT_REPO_BRANCH_PARAM, 'sha1', 'Branch to be built')
+        }
+        logRotator {
+            numToKeep(50)
+            artifactNumToKeep(10)
+        }
+        concurrentBuild()
+        wrappers {
+            colorizeOutput('xterm')
+            timestamps()
+            credentialsBinding {
+                usernamePassword('SONAR_RUNNER_USERNAME', 'SONAR_RUNNER_PASSWORD', injectJobVariable(SONAR_RUNNER_PASSWORD_PARAM))
+            }
+        }
+        customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+        archivingDisabled(true)
+        goals('org.jacoco:jacoco-maven-plugin:merge@merge-integration-test-coverage')
+        goals('sonar:sonar')
+        goals('-Psonar-ci-cosmic-microservices')
+        goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")
+        goals("-Dcosmic-microservices.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+        goals("-DskipITs")
+        goals("-Dsonar.branch=${injectJobVariable(GIT_REPO_BRANCH_PARAM)}-${isDevFolder ? 'DEV-' : ''}build")
     }
 }
 

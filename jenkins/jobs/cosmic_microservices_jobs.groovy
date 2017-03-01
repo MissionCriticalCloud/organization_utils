@@ -331,6 +331,7 @@ FOLDERS.each { folderName ->
             preBuildSteps {
                 shell("git checkout master")
             }
+            goals("-Pproduction")
             goals("release:prepare release:perform  -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
         }
 
@@ -371,6 +372,7 @@ FOLDERS.each { folderName ->
             preBuildSteps {
                 shell("git checkout master")
             }
+            goals("-Pproduction")
             goals("release:update-versions --batch-mode -DdevelopmentVersion=${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}")
             postBuildSteps {
                 shell("git add .")
@@ -458,7 +460,7 @@ FOLDERS.each { folderName ->
 //            goals('deploy')
 //        }
         goals('-U')
-        goals('-Psonar-ci-cosmic-microservices')
+        goals('-Psonar-ci-cosmic-microservices,production')
         goals("-Dcosmic-microservices.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
     }
 
@@ -492,7 +494,7 @@ FOLDERS.each { folderName ->
         archivingDisabled(true)
         goals('org.jacoco:jacoco-maven-plugin:merge@merge-integration-test-coverage')
         goals('sonar:sonar')
-        goals('-Psonar-ci-cosmic-microservices')
+        goals('-Psonar-ci-cosmic-microservices,production')
         goals("-Dci.sonar-runner.password=\"${injectJobVariable("SONAR_RUNNER_PASSWORD")}\"")
         goals("-Dcosmic-microservices.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
         goals("-DskipITs")

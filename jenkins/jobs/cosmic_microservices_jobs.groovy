@@ -12,7 +12,7 @@ def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 def GITHUB_OAUTH2_CREDENTIAL_PARAM = 'mccdJenkinsOauth2'
 def SONAR_RUNNER_PASSWORD_PARAM = 'sonarRunnerPassword'
 
-def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-microservices-jobs'
+def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
 
 def MAVEN_RELEASE_VERSION_PARAM = 'releaseVersion'
 def MAVEN_RELEASE_NO_PUSH = '-DpushChanges=false -DlocalCheckout=true'
@@ -48,6 +48,8 @@ def COSMIC_BUILD_ARTEFACTS = [
 
 def DEFAULT_EXECUTOR = 'executor'
 def DEFAULT_EXECUTOR_MCT = 'executor-mct'
+
+def DOCKER_HOST = 'tcp://127.0.0.1:2375'
 
 // dev folder is to play with jobs.
 // Jobs defined there should never automatically trigger
@@ -297,6 +299,9 @@ FOLDERS.each { folderName ->
                 stringParam(MAVEN_RELEASE_VERSION_PARAM, "", 'Release version')
             }
             concurrentBuild(false)
+            throttleConcurrentBuilds {
+                categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
+            }
             label(executorLabelMct)
             logRotator {
                 numToKeep(50)
@@ -319,6 +324,9 @@ FOLDERS.each { folderName ->
                         wipeOutWorkspace()
                     }
                 }
+            }
+            environmentVariables {
+                env('DOCKER_HOST', DOCKER_HOST)
             }
             preBuildSteps {
                 shell("git checkout master")
@@ -331,6 +339,9 @@ FOLDERS.each { folderName ->
                 stringParam(MAVEN_SNAPSHOT_VERSION_PARAM, "", 'Snapshot version, include \'-SNAPSHOT\' in the version string. Example: 6.0.0.0-SNAPSHOT')
             }
             concurrentBuild(false)
+            throttleConcurrentBuilds {
+                categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
+            }
             label(executorLabelMct)
             logRotator {
                 numToKeep(50)
@@ -353,6 +364,9 @@ FOLDERS.each { folderName ->
                         wipeOutWorkspace()
                     }
                 }
+            }
+            environmentVariables {
+                env('DOCKER_HOST', DOCKER_HOST)
             }
             preBuildSteps {
                 shell("git checkout master")
@@ -432,6 +446,9 @@ FOLDERS.each { folderName ->
             colorizeOutput('xterm')
             timestamps()
         }
+        environmentVariables {
+            env('DOCKER_HOST', DOCKER_HOST)
+        }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
         archivingDisabled(true)
         concurrentBuild(true)
@@ -468,6 +485,9 @@ FOLDERS.each { folderName ->
                 usernamePassword('SONAR_RUNNER_USERNAME', 'SONAR_RUNNER_PASSWORD', injectJobVariable(SONAR_RUNNER_PASSWORD_PARAM))
             }
         }
+        environmentVariables {
+            env('DOCKER_HOST', DOCKER_HOST)
+        }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
         archivingDisabled(true)
         goals('org.jacoco:jacoco-maven-plugin:merge@merge-integration-test-coverage')
@@ -488,24 +508,6 @@ def makePatternList(patterns) {
     return listToStringWithSeparator(', ', patterns)
 }
 
-def makeMultiline(lines) {
-    return listToStringWithSeparator('\n', lines)
-}
-
-def makeSpaceSeperatedList(elements) {
-    return listToStringWithSeparator(' ', elements)
-}
-
 def listToStringWithSeparator(separator, list) {
     return list.join(separator)
 }
-
-def flattenLines(lines) {
-    return lines.replaceAll('\n', ' ')
-}
-
-def subArray(array) {
-    def endIndex = array.size() > 1 ? 1 : 0
-    return array[0..endIndex]
-}
-

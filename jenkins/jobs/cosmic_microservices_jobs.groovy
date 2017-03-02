@@ -50,7 +50,7 @@ def DEFAULT_EXECUTOR = 'executor'
 def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 def DOCKER_HOST = 'tcp://127.0.0.1:2375'
-def DOCKER_PUSH = 'docker:push -Ddocker.filter=%g/%a:%l -Pproduction'
+def DOCKER_PUSH = 'mvn docker:push -Ddocker.filter=%g/%a:%l -Pproduction'
 def DOCKER_PUSH_PARAM = 'dockerPushParam'
 
 // dev folder is to play with jobs.
@@ -338,7 +338,7 @@ FOLDERS.each { folderName ->
             goals("release:prepare release:perform  -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
             postBuildSteps {
                 shell("git reset HEAD~1 --hard")
-                shell("mvn ${DOCKER_PUSH}")
+                shell("${DOCKER_PUSH}")
             }
         }
 
@@ -473,7 +473,7 @@ FOLDERS.each { folderName ->
         goals('-Psonar-ci-cosmic-microservices,production')
         goals("-Dcosmic-microservices.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
         postBuildSteps {
-            shell("mvn ${injectJobVariable(DOCKER_PUSH_PARAM)}")
+            shell("${injectJobVariable(DOCKER_PUSH_PARAM)}")
         }
     }
 

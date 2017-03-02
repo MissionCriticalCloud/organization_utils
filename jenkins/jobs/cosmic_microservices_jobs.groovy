@@ -50,6 +50,8 @@ def DEFAULT_EXECUTOR = 'executor'
 def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 def DOCKER_HOST = 'tcp://127.0.0.1:2375'
+def DOCKER_PUSH = 'docker:push -Ddocker.filter=%g/%a:%l -Pproduction'
+def DOCKER_PUSH_PARAM = 'dockerPushParam'
 
 // dev folder is to play with jobs.
 // Jobs defined there should never automatically trigger
@@ -180,6 +182,7 @@ FOLDERS.each { folderName ->
                             sameNode()
                             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
                             predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
+                            predefinedProp(DOCKER_PUSH_PARAM, DOCKER_PUSH)
                             gitRevision(true)
                         }
                     }
@@ -333,6 +336,10 @@ FOLDERS.each { folderName ->
             }
             goals("-Pproduction")
             goals("release:prepare release:perform  -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
+            postBuildSteps {
+                shell("git reset HEAD~1 --hard")
+                shell("mvn ${DOCKER_PUSH}")
+            }
         }
 
         mavenJob("${folderName}/" + cosmicmicroservicesSnapshotBuild) {
@@ -386,6 +393,7 @@ FOLDERS.each { folderName ->
             parameters {
                 stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
                 stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
+                stringParam(DOCKER_PUSH_PARAM, '', 'If we want to push to Docker')
             }
             customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
             label(executorLabelMct)
@@ -407,6 +415,7 @@ FOLDERS.each { folderName ->
                         currentJobParameters(true)
                         parameters {
                             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+                            predefinedProp(DOCKER_PUSH_PARAM, injectJobVariable(DOCKER_PUSH_PARAM))
                             sameNode()
                             gitRevision(true)
                         }
@@ -438,6 +447,7 @@ FOLDERS.each { folderName ->
                 description('mccd jenkins OAuth2 token credential')
             }
             stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+            stringParam(DOCKER_PUSH_PARAM, "", 'If we want to push to Docker')
         }
         logRotator {
             numToKeep(50)
@@ -462,6 +472,9 @@ FOLDERS.each { folderName ->
         goals('-U')
         goals('-Psonar-ci-cosmic-microservices,production')
         goals("-Dcosmic-microservices.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+        postBuildSteps {
+            shell("mvn ${injectJobVariable(DOCKER_PUSH_PARAM)}")
+        }
     }
 
     mavenJob(mavenSonarBuild) {

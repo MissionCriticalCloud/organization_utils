@@ -115,6 +115,7 @@ FOLDERS.each { folderName ->
     def deployDatacenterForIntegrationTests = "${folderName}/0400-deploy-datacenter-for-integration-tests"
     def runIntegrationTests = "${folderName}/0500-run-integration-tests"
     def collectArtifactsAndCleanup = "${folderName}/0600-collect-artifacts-and-cleanup"
+    def mavenDependencyCheckBuild = "${folderName}/9996-maven-dependency-check-build"
     def mavenBuild = "${folderName}/9997-maven-build"
     def mavenSonarBuild = "${folderName}/9998-maven-sonar-build"
     def seedJob = "${folderName}/9999-seed-job"
@@ -533,6 +534,14 @@ FOLDERS.each { folderName ->
                             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
                         }
                     }
+                    phaseJob(mavenDependencyCheckBuild) {
+                        currentJobParameters(true)
+                        parameters {
+                            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+                            sameNode()
+                            gitRevision(true)
+                        }
+                    }
                 }
                 shell('mkdir -p MarvinLogs')
                 shell('mv cosmic-core/test/integration/runinfo.txt MarvinLogs/tests_runinfo.txt')
@@ -784,6 +793,26 @@ FOLDERS.each { folderName ->
         goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
         goals("-DskipITs")
         goals("-Dsonar.branch=${injectJobVariable(GIT_REPO_BRANCH_PARAM)}-${isDevFolder ? 'DEV-' : ''}build")
+    }
+
+    mavenJob(mavenDependencyCheckBuild) {
+        parameters {
+            stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+        }
+        logRotator {
+            numToKeep(50)
+            artifactNumToKeep(10)
+        }
+        concurrentBuild()
+        wrappers {
+            colorizeOutput('xterm')
+            timestamps()
+        }
+        customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
+        archivingDisabled(true)
+        goals('dependency-check:check')
+        goals('-Pdependency-check-maven')
+        goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
     }
 }
 

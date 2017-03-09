@@ -383,18 +383,18 @@ FOLDERS.each { folderName ->
             goals("release:prepare release:perform -Psystemvm -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
             postBuildSteps {
                 shell(makeMultiline([
-                    "VERSION=" + injectJobVariable(MAVEN_RELEASE_VERSION_PARAM),
+                    "VERSION=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)}",
                     "if [ -z \"\${VERSION}\" ]; then",
                     "    echo \"No release version specified, using project version from pom.xml\"",
-                    "    VERSION=\$(printf \'COSMIC_VERSION=\${project.version}\' | mvn -N -o help:evaluate | grep COSMIC_VERSION | sed \'s/COSMIC_VERSION=//g\')",
+                    "    VERSION=\$(printf \'COSMIC_VERSION=\${project.version}\' | mvn -N help:evaluate | grep COSMIC_VERSION | sed \'s/COSMIC_VERSION=//g\')",
                     "else",
                     "    echo \"Release version \${VERSION} specified.\"",
                     "fi",
-                    "sed -i \"s/VERSION = .*/VERSION = \\\'\${VERSION}\\\'/g\" ${MARVIN_VERSION_FILE}"
+                    "sed -i \"s/VERSION = .*/VERSION = \\\'\${VERSION}\\\'/g\" ${MARVIN_VERSION_FILE}",
+                    "git add ${MARVIN_VERSION_FILE}",
+                    "git commit -m \"Updated Marvin version to \${VERSION}\"",
+                    "git push origin HEAD:master"
                 ]))
-                shell("git add ${MARVIN_VERSION_FILE}")
-                shell("git commit -m \"Updated Marvin version to ${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)}\"")
-                shell("git push origin HEAD:master")
             }
             configure { it <<
                 'runPostStepsIfResult' {
@@ -437,18 +437,18 @@ FOLDERS.each { folderName ->
             goals("release:update-versions --batch-mode -DdevelopmentVersion=${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)} -Psystemvm")
             postBuildSteps {
                 shell(makeMultiline([
-                    "VERSION=" + injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM),
+                    "VERSION=${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}",
                     "if [ -z \"\${VERSION}\" ]; then",
                     "    echo \"No snapshot version specified, using project version from pom.xml\"",
-                    "    VERSION=\$(printf \'COSMIC_VERSION=\${project.version}\' | mvn -N -o help:evaluate | grep COSMIC_VERSION | sed \'s/COSMIC_VERSION=//g\')",
+                    "    VERSION=\$(printf \'COSMIC_VERSION=\${project.version}\' | mvn -N help:evaluate | grep COSMIC_VERSION | sed \'s/COSMIC_VERSION=//g\')",
                     "else",
                     "    echo \"Snapshot version \${VERSION} specified.\"",
                     "fi",
-                    "sed -i \"s/VERSION = .*/VERSION = \\\'\${VERSION}\\\'/g\" ${MARVIN_VERSION_FILE}"
+                    "sed -i \"s/VERSION = .*/VERSION = \\\'\${VERSION}\\\'/g\" ${MARVIN_VERSION_FILE}",
+                    "git add -A",
+                    "git commit -m \"Updated SNAPSHOT version to \${VERSION}\"",
+                    "git push origin HEAD:master"
                 ]))
-                shell("git add .")
-                shell("git commit -m \"Updated SNAPSHOT version to ${injectJobVariable(MAVEN_SNAPSHOT_VERSION_PARAM)}\"")
-                shell("git push origin HEAD:master")
             }
             configure { it <<
                 'runPostStepsIfResult' {

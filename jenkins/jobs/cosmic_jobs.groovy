@@ -547,17 +547,17 @@ FOLDERS.each { folderName ->
                 shell('mv cosmic-core/test/integration/runinfo.txt MarvinLogs/tests_runinfo.txt')
                 shell('mv cosmic-core/test/integration/failed_plus_exceptions.txt MarvinLogs/tests_failed_plus_exceptions.txt')
                 shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh -m /data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg")
-                phase('Sonar analysis') {
-                    phaseJob(mavenSonarBuild) {
-                        currentJobParameters(true)
-                        parameters {
-                            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_REPO_BRANCH_PARAM))
-                            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
-                            sameNode()
-                            gitRevision(true)
-                        }
-                    }
-                }
+//                phase('Sonar analysis') {
+//                    phaseJob(mavenSonarBuild) {
+//                        currentJobParameters(true)
+//                        parameters {
+//                            predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_REPO_BRANCH_PARAM))
+//                            predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
+//                            sameNode()
+//                            gitRevision(true)
+//                        }
+//                    }
+//                }
                 phase('Report, Archive and Cleanup') {
                     phaseJob(collectArtifactsAndCleanup) {
                         currentJobParameters(false)

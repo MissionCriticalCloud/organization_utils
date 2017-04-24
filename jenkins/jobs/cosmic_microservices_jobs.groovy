@@ -335,7 +335,7 @@ FOLDERS.each { folderName ->
                 shell("git checkout master")
             }
             goals("-Pproduction")
-            goals("release:prepare release:perform  -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
+            goals("release:prepare release:perform -DreleaseVersion=${injectJobVariable(MAVEN_RELEASE_VERSION_PARAM)} ${(isDevFolder ? MAVEN_RELEASE_NO_PUSH : '')}")
             postBuildSteps {
                 shell("git reset HEAD~1 --hard")
                 shell("${DOCKER_PUSH}")
@@ -466,12 +466,10 @@ FOLDERS.each { folderName ->
         concurrentBuild(true)
         goals('clean')
         goals('install')
-//        if (!isDevFolder) {
-//            goals('deploy')
-//        }
         goals('-U')
         goals('-Psonar-ci-cosmic-microservices,production')
         goals("-Dcosmic-microservices.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
+        goals("-Dcosmic.metrics-collector.enable-collectors=false")
         postBuildSteps {
             shell("${injectJobVariable(DOCKER_PUSH_PARAM)}")
         }

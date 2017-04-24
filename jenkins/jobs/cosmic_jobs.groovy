@@ -76,19 +76,24 @@ def COSMIC_BUILD_ARTEFACTS = [
 ] + COSMIC_TEST_ARTEFACTS + CLEAN_UP_JOB_ARTIFACTS
 
 def COSMIC_TESTS_WITH_HARDWARE = [
-        'smoke/test_network.py',
-        'smoke/test_routers_iptables_default_policy.py',
-        'smoke/test_password_server.py',
-        'smoke/test_vpc_redundant.py',
-        'smoke/test_routers_network_ops.py',
-        'smoke/test_vpc_router_nics.py',
-        'smoke/test_router_dhcphosts.py',
+        'smoke/test_delete_account.py',
+        'smoke/test_ip_exclusion_list.py',
         'smoke/test_loadbalance.py',
+        'smoke/test_password_server.py',
+        'smoke/test_port_forwarding.py',
         'smoke/test_privategw_acl.py',
-        'smoke/test_ssvm.py',
-        'smoke/test_vpc_vpn.py',
+        'smoke/test_public_ip.py',
         'smoke/test_public_ip_acl.py',
-        'smoke/test_ip_exclusion_list.py'
+        'smoke/test_reboot_router.py',
+        'smoke/test_release_ip.py',
+        'smoke/test_router_dhcphosts.py',
+        'smoke/test_router_rules.py',
+        'smoke/test_routers_iptables_default_policy.py',
+        'smoke/test_routers_network_ops.py',
+        'smoke/test_ssvm.py',
+        'smoke/test_vpc_redundant.py',
+        'smoke/test_vpc_router_nics.py',
+        'smoke/test_vpc_vpn.py'
 ]
 
 def DEFAULT_EXECUTOR = 'executor'

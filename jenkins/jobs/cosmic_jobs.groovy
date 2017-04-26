@@ -11,7 +11,6 @@ def DEFAULT_GITHUB_REPOSITORY_BRANCH = 'master'
 
 def GITHUB_OAUTH2_CREDENTIAL_PARAM = 'mccdJenkinsOauth2'
 def SONAR_RUNNER_PASSWORD_PARAM = 'sonarRunnerPassword'
-def REQUIRED_HARDWARE_PARAM = 'requiredHardware'
 def TESTS_PARAM = 'tests'
 
 def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
@@ -41,7 +40,7 @@ def MAVEN_REPORTS = [
 ]
 
 def MARVIN_REPORTS = [
-        'nosetests-required_hardware*'
+        'nosetests*'
 ]
 
 def MARVIN_DEPLOY_DC_LOGS = [
@@ -75,7 +74,7 @@ def COSMIC_BUILD_ARTEFACTS = [
         'cosmic-plugin-hypervisor-xenserver/target/*.jar'
 ] + COSMIC_TEST_ARTEFACTS + CLEAN_UP_JOB_ARTIFACTS
 
-def COSMIC_TESTS_WITH_HARDWARE = [
+def COSMIC_INTEGRATION_TESTS = [
         'smoke/test_delete_account.py',
         'smoke/test_ip_exclusion_list.py',
         'smoke/test_isolated_networks.py',
@@ -199,7 +198,7 @@ FOLDERS.each { folderName ->
 
         multiJob("${folderName}/" + cosmicMasterBuild) {
             parameters {
-                textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
+                textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_INTEGRATION_TESTS) : COSMIC_INTEGRATION_TESTS), 'Set of integration tests to execute')
             }
             label(executorLabelMct)
             concurrentBuild()
@@ -276,7 +275,7 @@ FOLDERS.each { folderName ->
         multiJob("${folderName}/" + cosmicPullRequestBuild) {
             parameters {
                 stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
-                textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
+                textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_INTEGRATION_TESTS) : COSMIC_INTEGRATION_TESTS), 'Set of integration tests to execute')
             }
             concurrentBuild()
             throttleConcurrentBuilds {
@@ -470,7 +469,7 @@ FOLDERS.each { folderName ->
             parameters {
                 stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
                 stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
-                textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_TESTS_WITH_HARDWARE) : COSMIC_TESTS_WITH_HARDWARE), 'Set of integration tests to execute')
+                textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_INTEGRATION_TESTS) : COSMIC_INTEGRATION_TESTS), 'Set of integration tests to execute')
             }
             customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
             label(executorLabelMct)
@@ -710,7 +709,6 @@ FOLDERS.each { folderName ->
     freeStyleJob(runIntegrationTests) {
         parameters {
             stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
-            booleanParam(REQUIRED_HARDWARE_PARAM, true, 'Flag passed to Marvin to select test cases to execute')
             textParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
         }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
@@ -728,7 +726,7 @@ FOLDERS.each { folderName ->
             timestamps()
         }
         steps {
-            shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} -h ${injectJobVariable(REQUIRED_HARDWARE_PARAM)} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
+            shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
         }
     }
 

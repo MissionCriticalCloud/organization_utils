@@ -29,6 +29,7 @@ def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 def MCCD_JENKINS_GITHUB_OAUTH_CREDENTIALS = '95c201f6-794e-434b-a667-cf079aac4dfc'
 def SONAR_RUNNER_PASSWORD_CREDENTIALS = 'df77a17c-5613-4fdf-8c49-52789b613e51'
 
+def MARVIN_CONFIG_FILE_PARAM = 'marvinConfigFile'
 def DEFAULT_MARVIN_CONFIG_FILE = '/data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg'
 def MARVIN_VERSION_FILE = 'cosmic-marvin/setup.py'
 
@@ -199,6 +200,7 @@ FOLDERS.each { folderName ->
         multiJob("${folderName}/" + cosmicMasterBuild) {
             parameters {
                 textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_INTEGRATION_TESTS) : COSMIC_INTEGRATION_TESTS), 'Set of integration tests to execute')
+                stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
             }
             label(executorLabelMct)
             concurrentBuild()
@@ -240,6 +242,7 @@ FOLDERS.each { folderName ->
                             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
                             predefinedProp(GIT_REPO_BRANCH_PARAM, 'master')
                             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
+                            predefinedProp(MARVIN_CONFIG_FILE_PARAM, injectJobVariable(MARVIN_CONFIG_FILE_PARAM))
                             gitRevision(true)
                         }
                     }
@@ -276,6 +279,7 @@ FOLDERS.each { folderName ->
             parameters {
                 stringParam(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_PR_BRANCH_ENV_VARIABLE_NAME), 'Branch to be built')
                 textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_INTEGRATION_TESTS) : COSMIC_INTEGRATION_TESTS), 'Set of integration tests to execute')
+                stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
             }
             concurrentBuild()
             throttleConcurrentBuilds {
@@ -329,6 +333,7 @@ FOLDERS.each { folderName ->
                             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
                             predefinedProp(GIT_REPO_BRANCH_PARAM, injectJobVariable(GIT_BRANCH_ENV_VARIABLE_NAME))
                             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
+                            predefinedProp(MARVIN_CONFIG_FILE_PARAM, injectJobVariable(MARVIN_CONFIG_FILE_PARAM))
                             gitRevision(true)
                         }
                     }
@@ -470,6 +475,7 @@ FOLDERS.each { folderName ->
                 stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
                 stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
                 textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_INTEGRATION_TESTS) : COSMIC_INTEGRATION_TESTS), 'Set of integration tests to execute')
+                stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
             }
             customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
             label(executorLabelMct)
@@ -498,6 +504,7 @@ FOLDERS.each { folderName ->
                     phaseJob(prepareInfraForIntegrationTests) {
                         currentJobParameters(false)
                         parameters {
+                            predefinedProp(MARVIN_CONFIG_FILE_PARAM, injectJobVariable(MARVIN_CONFIG_FILE_PARAM))
                             sameNode()
                             gitRevision(true)
                         }
@@ -507,6 +514,7 @@ FOLDERS.each { folderName ->
                     phaseJob(setupInfraForIntegrationTests) {
                         currentJobParameters(false)
                         parameters {
+                            predefinedProp(MARVIN_CONFIG_FILE_PARAM, injectJobVariable(MARVIN_CONFIG_FILE_PARAM))
                             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
                             sameNode()
                             gitRevision(true)
@@ -518,6 +526,7 @@ FOLDERS.each { folderName ->
                     phaseJob(deployDatacenterForIntegrationTests) {
                         currentJobParameters(false)
                         parameters {
+                            predefinedProp(MARVIN_CONFIG_FILE_PARAM, injectJobVariable(MARVIN_CONFIG_FILE_PARAM))
                             sameNode()
                             gitRevision(true)
                         }
@@ -539,6 +548,7 @@ FOLDERS.each { folderName ->
                             gitRevision(true)
                             predefinedProp(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR)
                             predefinedProp(TESTS_PARAM, injectJobVariable(TESTS_PARAM))
+                            predefinedProp(MARVIN_CONFIG_FILE_PARAM, injectJobVariable(MARVIN_CONFIG_FILE_PARAM))
                         }
                     }
                     phaseJob(mavenDependencyCheckBuild) {
@@ -553,7 +563,7 @@ FOLDERS.each { folderName ->
                 shell('mkdir -p MarvinLogs')
                 shell('mv cosmic-core/test/integration/runinfo.txt MarvinLogs/tests_runinfo.txt')
                 shell('mv cosmic-core/test/integration/failed_plus_exceptions.txt MarvinLogs/tests_failed_plus_exceptions.txt')
-                shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh -m /data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg")
+                shell("${shellPrefix} /data/shared/ci/ci-collect-integration-tests-coverage.sh -m ${injectJobVariable(MARVIN_CONFIG_FILE_PARAM)}")
                 phase('Sonar analysis') {
                     phaseJob(mavenSonarBuild) {
                         currentJobParameters(true)
@@ -569,6 +579,7 @@ FOLDERS.each { folderName ->
                     phaseJob(collectArtifactsAndCleanup) {
                         currentJobParameters(false)
                         parameters {
+                            predefinedProp(MARVIN_CONFIG_FILE_PARAM, injectJobVariable(MARVIN_CONFIG_FILE_PARAM))
                             sameNode()
                             gitRevision(true)
                         }
@@ -586,6 +597,9 @@ FOLDERS.each { folderName ->
     }
 
     freeStyleJob(collectArtifactsAndCleanup) {
+        parameters {
+            stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
+        }
         label(executorLabelMct)
         concurrentBuild()
         throttleConcurrentBuilds {
@@ -601,7 +615,7 @@ FOLDERS.each { folderName ->
         }
         steps {
             shell('rm -rf ./*')
-            shell("${shellPrefix} /data/shared/ci/ci-cleanup.sh -m /data/shared/marvin/mct-zone1-cs1-kvm1-kvm2.cfg")
+            shell("${shellPrefix} /data/shared/ci/ci-cleanup.sh -m ${injectJobVariable(MARVIN_CONFIG_FILE_PARAM)}")
         }
         publishers {
             archiveArtifacts {
@@ -612,6 +626,9 @@ FOLDERS.each { folderName ->
 
     // Job that prepares the infrastructure for the cosmic integration tests
     freeStyleJob(prepareInfraForIntegrationTests) {
+        parameters {
+            stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
+        }
         label(executorLabelMct)
         concurrentBuild()
         throttleConcurrentBuilds {
@@ -627,28 +644,7 @@ FOLDERS.each { folderName ->
         }
         steps {
             shell('rm -rf ./*')
-            shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
-        }
-    }
-
-    // Job that prepares the infrastructure for the cosmic integration tests
-    freeStyleJob(prepareInfraForIntegrationTests) {
-        label(executorLabelMct)
-        concurrentBuild()
-        throttleConcurrentBuilds {
-            maxPerNode(1)
-        }
-        logRotator {
-            numToKeep(50)
-            artifactNumToKeep(10)
-        }
-        wrappers {
-            colorizeOutput('xterm')
-            timestamps()
-        }
-        steps {
-            shell('rm -rf ./*')
-            shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+            shell("${shellPrefix} /data/shared/ci/ci-prepare-infra.sh -m ${injectJobVariable(MARVIN_CONFIG_FILE_PARAM)}")
         }
     }
 
@@ -656,6 +652,7 @@ FOLDERS.each { folderName ->
     freeStyleJob(setupInfraForIntegrationTests) {
         parameters {
             stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
+            stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
         }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
         label(executorLabelMct)
@@ -672,11 +669,14 @@ FOLDERS.each { folderName ->
             timestamps()
         }
         steps {
-            shell("${shellPrefix} /data/shared/ci/ci-setup-infra.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+            shell("${shellPrefix} /data/shared/ci/ci-setup-infra.sh -m ${injectJobVariable(MARVIN_CONFIG_FILE_PARAM)}")
         }
     }
 
     freeStyleJob(deployDatacenterForIntegrationTests) {
+        parameters {
+            stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
+        }
         label(executorLabelMct)
         concurrentBuild()
         throttleConcurrentBuilds {
@@ -692,7 +692,7 @@ FOLDERS.each { folderName ->
         }
         steps {
             shell('rm -rf *')
-            shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${DEFAULT_MARVIN_CONFIG_FILE}")
+            shell("${shellPrefix} /data/shared/ci/ci-deploy-data-center.sh -m ${injectJobVariable(MARVIN_CONFIG_FILE_PARAM)}")
             shell('mkdir MarvinLogs')
             shell('mv dc_entries_*.obj MarvinLogs/')
             shell('mv runinfo.txt MarvinLogs/deployDc_runinfo.txt')
@@ -710,6 +710,7 @@ FOLDERS.each { folderName ->
         parameters {
             stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
             textParam(TESTS_PARAM, '', 'Set of Marvin tests to execute')
+            stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
         }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
         label(executorLabelMct)
@@ -726,7 +727,7 @@ FOLDERS.each { folderName ->
             timestamps()
         }
         steps {
-            shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${DEFAULT_MARVIN_CONFIG_FILE} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
+            shell("${shellPrefix} /data/shared/ci/ci-run-marvin-tests.sh -m ${injectJobVariable(MARVIN_CONFIG_FILE_PARAM)} ${injectJobVariable(flattenLines(TESTS_PARAM))} || true")
         }
     }
 

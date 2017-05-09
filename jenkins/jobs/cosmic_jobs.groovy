@@ -129,7 +129,7 @@ FOLDERS.each { folderName ->
     def seedJob = "${folderName}/9999-seed-job"
 
     def isDevFolder = folderName.endsWith('-dev')
-    def shellPrefix = isDevFolder ? 'bash -x' : ''
+    def shellPrefix = 'bash -x'
     def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
 
     folder(folderName) {

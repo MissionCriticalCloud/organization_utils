@@ -260,16 +260,6 @@ FOLDERS.each { folderName ->
                             publishTestStabilityData()
                         }
                     }
-                    slackNotifications {
-                        notifyBuildStart()
-                        notifyAborted()
-                        notifyFailure()
-                        notifyNotBuilt()
-                        notifyUnstable()
-                        notifyBackToNormal()
-                        includeTestSummary()
-                        showCommitList()
-                    }
                     githubCommitNotifier()
                 }
             }
@@ -346,16 +336,6 @@ FOLDERS.each { folderName ->
                         testDataPublishers {
                             publishTestStabilityData()
                         }
-                    }
-                    slackNotifications {
-                        notifyBuildStart()
-                        notifyAborted()
-                        notifyFailure()
-                        notifyNotBuilt()
-                        notifyUnstable()
-                        notifyBackToNormal()
-                        includeTestSummary()
-                        showCommitList()
                     }
                 }
             }

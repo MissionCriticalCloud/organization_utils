@@ -42,7 +42,8 @@ def XUNIT_REPORTS = MARVIN_REPORTS + MAVEN_REPORTS
 def COSMIC_BUILD_ARTEFACTS = [
         'cosmic-config-server/target/cosmic-config-server.jar',
         'cosmic-metrics-collector/target/cosmic-metrics-collector.jar',
-        'cosmic-usage-api/target/cosmic-usage-api.jar'
+        'cosmic-usage-api/target/cosmic-usage-api.jar',
+        'cosmic-bill-viewer/target/cosmic-bill-viewer.jar'
 ]
 
 

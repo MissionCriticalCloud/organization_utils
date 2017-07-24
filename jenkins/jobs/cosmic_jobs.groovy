@@ -746,6 +746,7 @@ FOLDERS.each { folderName ->
         goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
         goals("-Dlog.file.management.server=\"${MANAGEMENT_SERVER_LOG_FILE}\"")
         goals("-Dlog.rotation.management.server=\"${MANAGEMENT_SERVER_LOG_ROTATION}\"")
+        goals("-Dcosmic.tests.mockdb=true")
     }
 
     mavenJob(mavenSonarBuild) {
@@ -780,6 +781,7 @@ FOLDERS.each { folderName ->
         goals("-Dcosmic.dir=\"${injectJobVariable(CUSTOM_WORKSPACE_PARAM)}\"")
         goals("-DskipITs")
         goals("-Dsonar.branch=${injectJobVariable(GIT_REPO_BRANCH_PARAM)}-${isDevFolder ? 'DEV-' : ''}build")
+        goals("-Dcosmic.tests.mockdb=true")
     }
 
     mavenJob(mavenDependencyCheckBuild) {

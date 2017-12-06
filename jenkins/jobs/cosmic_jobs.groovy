@@ -81,7 +81,6 @@ def COSMIC_INTEGRATION_TESTS = [
         'smoke/test_loadbalance.py',
         'smoke/test_password_server.py',
         'smoke/test_privategw_acl.py',
-        'smoke/test_public_ip.py',
         'smoke/test_public_ip_acl.py',
         'smoke/test_release_ip.py',
         'smoke/test_router_ip_tables_policies.py',

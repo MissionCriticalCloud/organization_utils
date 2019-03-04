@@ -79,7 +79,7 @@ def COSMIC_INTEGRATION_TESTS = [
         'smoke/test_delete_account.py',
         'smoke/test_ip_exclusion_list.py',
         'smoke/test_loadbalance.py',
-        'smoke/test_password_server.py',
+        'smoke/test_password_and_dnsmasq_service.py',
         'smoke/test_privategw_acl.py',
         'smoke/test_public_ip_acl.py',
         'smoke/test_release_ip.py',

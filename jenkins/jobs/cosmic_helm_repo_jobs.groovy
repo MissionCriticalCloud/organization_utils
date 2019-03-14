@@ -30,7 +30,6 @@ def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 def MCCD_JENKINS_AWS_CREDENTIALS = '948b39fd-61fd-4669-8afd-55e46c1c03ee'
 
 def DEFAULT_EXECUTOR = 'executor'
-def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 def cosmicMasterBuild = "0001-cosmic-helm-repo-master-build"
 def cosmicPullRequestBuild = "0002-cosmic-helm-repo-pull-request-build"
@@ -80,7 +79,7 @@ freeStyleJob(SEED_JOB) {
 }
 
 multiJob("${FOLDER_NAME}/" + cosmicMasterBuild) {
-    label(DEFAULT_EXECUTOR_MCT)
+    label(DEFAULT_EXECUTOR)
     concurrentBuild()
     logRotator {
         numToKeep(50)
@@ -129,7 +128,7 @@ multiJob("${FOLDER_NAME}/" + cosmicPullRequestBuild) {
     throttleConcurrentBuilds {
         categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
     }
-    label(DEFAULT_EXECUTOR_MCT)
+    label(DEFAULT_EXECUTOR)
     logRotator {
         numToKeep(50)
         artifactNumToKeep(10)
@@ -186,7 +185,7 @@ multiJob(fullBuild) {
         stringParam(GIT_REPO_BRANCH_PARAM, 'master', 'Branch to be built')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    label(DEFAULT_EXECUTOR_MCT)
+    label(DEFAULT_EXECUTOR)
     concurrentBuild()
     throttleConcurrentBuilds {
         maxPerNode(1)
@@ -219,7 +218,7 @@ freeStyleJob(makeBuild) {
         stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    label(DEFAULT_EXECUTOR_MCT)
+    label(DEFAULT_EXECUTOR)
     concurrentBuild()
     throttleConcurrentBuilds {
         maxPerNode(1)
@@ -243,7 +242,7 @@ freeStyleJob(makeLintBuild) {
         stringParam(CUSTOM_WORKSPACE_PARAM, WORKSPACE_VAR, 'A custom workspace to use for the job')
     }
     customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-    label(DEFAULT_EXECUTOR_MCT)
+    label(DEFAULT_EXECUTOR)
     concurrentBuild()
     throttleConcurrentBuilds {
         maxPerNode(1)

@@ -92,7 +92,6 @@ def COSMIC_INTEGRATION_TESTS = [
 ]
 
 def DEFAULT_EXECUTOR = 'executor'
-def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 // dev folder is to play with jobs.
 // Jobs defined there should never automatically trigger
@@ -122,7 +121,7 @@ FOLDERS.each { folderName ->
 
     def isDevFolder = folderName.endsWith('-dev')
     def shellPrefix = 'bash -x'
-    def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
+    def executorLabelDev = DEFAULT_EXECUTOR + (isDevFolder ? '-dev' : '')
 
     folder(folderName) {
         primaryView(cosmicView)
@@ -194,7 +193,7 @@ FOLDERS.each { folderName ->
                 textParam(TESTS_PARAM, makeMultiline(isDevFolder ? subArray(COSMIC_INTEGRATION_TESTS) : COSMIC_INTEGRATION_TESTS), 'Set of integration tests to execute')
                 stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
             }
-            label(executorLabelMct)
+            label(executorLabelDev)
             concurrentBuild()
             throttleConcurrentBuilds {
                 categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
@@ -267,7 +266,7 @@ FOLDERS.each { folderName ->
             throttleConcurrentBuilds {
                 categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
             }
-            label(executorLabelMct)
+            label(executorLabelDev)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)
@@ -338,7 +337,7 @@ FOLDERS.each { folderName ->
                 stringParam(MAVEN_RELEASE_VERSION_PARAM, "", 'Release version')
             }
             concurrentBuild(false)
-            label(executorLabelMct)
+            label(executorLabelDev)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)
@@ -392,7 +391,7 @@ FOLDERS.each { folderName ->
                 stringParam(MAVEN_SNAPSHOT_VERSION_PARAM, "", 'Snapshot version, include \'-SNAPSHOT\' in the version string. Example: 6.0.0.0-SNAPSHOT')
             }
             concurrentBuild(false)
-            label(executorLabelMct)
+            label(executorLabelDev)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)
@@ -450,7 +449,7 @@ FOLDERS.each { folderName ->
                 stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
             }
             customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-            label(executorLabelMct)
+            label(executorLabelDev)
             concurrentBuild()
             throttleConcurrentBuilds {
                 maxPerNode(1)
@@ -564,7 +563,7 @@ FOLDERS.each { folderName ->
         parameters {
             stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
         }
-        label(executorLabelMct)
+        label(executorLabelDev)
         concurrentBuild()
         throttleConcurrentBuilds {
             maxPerNode(1)
@@ -593,7 +592,7 @@ FOLDERS.each { folderName ->
         parameters {
             stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
         }
-        label(executorLabelMct)
+        label(executorLabelDev)
         concurrentBuild()
         throttleConcurrentBuilds {
             maxPerNode(1)
@@ -619,7 +618,7 @@ FOLDERS.each { folderName ->
             stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
         }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-        label(executorLabelMct)
+        label(executorLabelDev)
         concurrentBuild()
         throttleConcurrentBuilds {
             maxPerNode(1)
@@ -641,7 +640,7 @@ FOLDERS.each { folderName ->
         parameters {
             stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
         }
-        label(executorLabelMct)
+        label(executorLabelDev)
         concurrentBuild()
         throttleConcurrentBuilds {
             maxPerNode(1)
@@ -677,7 +676,7 @@ FOLDERS.each { folderName ->
             stringParam(MARVIN_CONFIG_FILE_PARAM, DEFAULT_MARVIN_CONFIG_FILE, 'Marvin file to use')
         }
         customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-        label(executorLabelMct)
+        label(executorLabelDev)
         concurrentBuild()
         throttleConcurrentBuilds {
             maxPerNode(1)

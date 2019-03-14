@@ -48,7 +48,6 @@ def COSMIC_BUILD_ARTEFACTS = [
 
 
 def DEFAULT_EXECUTOR = 'executor'
-def DEFAULT_EXECUTOR_MCT = 'executor-mct'
 
 def DOCKER_HOST = 'tcp://127.0.0.1:2375'
 def DOCKER_PUSH = 'mvn docker:push -Ddocker.filter=%g/%a:%l -Pproduction'
@@ -76,7 +75,7 @@ FOLDERS.each { folderName ->
     def seedJob = "${folderName}/9999-seed-job"
 
     def isDevFolder = folderName.endsWith('-dev')
-    def executorLabelMct = DEFAULT_EXECUTOR_MCT + (isDevFolder ? '-dev' : '')
+    def executorLabelDev = DEFAULT_EXECUTOR + (isDevFolder ? '-dev' : '')
 
     folder(folderName) {
         primaryView(cosmicView)
@@ -144,7 +143,7 @@ FOLDERS.each { folderName ->
         }
 
         multiJob("${folderName}/" + cosmicmicroservicesMasterBuild) {
-            label(executorLabelMct)
+            label(executorLabelDev)
             concurrentBuild()
             throttleConcurrentBuilds {
                 categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
@@ -224,7 +223,7 @@ FOLDERS.each { folderName ->
             throttleConcurrentBuilds {
                 categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
             }
-            label(executorLabelMct)
+            label(executorLabelDev)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)
@@ -306,7 +305,7 @@ FOLDERS.each { folderName ->
             throttleConcurrentBuilds {
                 categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
             }
-            label(executorLabelMct)
+            label(executorLabelDev)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)
@@ -351,7 +350,7 @@ FOLDERS.each { folderName ->
             throttleConcurrentBuilds {
                 categories([TOP_LEVEL_COSMIC_JOBS_CATEGORY])
             }
-            label(executorLabelMct)
+            label(executorLabelDev)
             logRotator {
                 numToKeep(50)
                 artifactNumToKeep(10)
@@ -397,7 +396,7 @@ FOLDERS.each { folderName ->
                 stringParam(DOCKER_PUSH_PARAM, '', 'If we want to push to Docker')
             }
             customWorkspace(injectJobVariable(CUSTOM_WORKSPACE_PARAM))
-            label(executorLabelMct)
+            label(executorLabelDev)
             concurrentBuild()
             throttleConcurrentBuilds {
                 maxPerNode(1)

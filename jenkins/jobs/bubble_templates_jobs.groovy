@@ -22,7 +22,7 @@ def TOP_LEVEL_COSMIC_JOBS_CATEGORY = 'top-level-cosmic-jobs'
 
 def MCCD_JENKINS_GITHUB_CREDENTIALS = 'f4ec9d6e-49fb-497c-bd1f-e42d88e105da'
 
-def DEFAULT_EXECUTOR = 'executor-mct'
+def DEFAULT_EXECUTOR = 'executor'
 
 def WORKSPACES = [
         '${WORKSPACE}/cosmic-centos-7',

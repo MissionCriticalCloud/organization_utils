@@ -26,7 +26,7 @@ def DEFAULT_EXECUTOR = 'executor'
 
 def WORKSPACES = [
         '${WORKSPACE}/cosmic-centos-7',
-        '${WORKSPACE}/cloudstack-centos-6'
+        '${WORKSPACE}/cosmic-centos-8'
 ]
 
 def BUBBLE_TEMPLATES_BUILD_ARTEFACTS = [
